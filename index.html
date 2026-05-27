@@ -5,13 +5,20 @@
 <title>タスク管理</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <style>
+/* --- 基本レイアウト --- */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root { --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 body { background-color: #fafafa; padding: 15px; font-family: var(--font-sans); }
+
 .main-container { display: flex; gap: 20px; max-width: 1400px; margin: 0 auto; align-items: flex-start; }
-.planner { flex: 1; background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #eee; box-shadow: 0 4px 6px rgba(0,0,0,0.05); min-height: 800px; }
+
+/* 左側：カレンダー */
+.planner { flex: 1; background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #eee; box-shadow: 0 4px 6px rgba(0,0,0,0.05); min-height: 850px; }
+
+/* 右側：サイドバー */
 .sidebar { width: 300px; background: #fbfbfb; border-radius: 12px; padding: 20px; border: 1px solid #ececec; position: sticky; top: 15px; }
 
+/* ヘッダー・ナビ */
 .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .title-area { display: flex; align-items: center; gap: 15px; }
 .title { font-size: 20px; font-weight: 800; color: #222; }
@@ -21,13 +28,15 @@ body { background-color: #fafafa; padding: 15px; font-family: var(--font-sans); 
 
 .nav-area { display: flex; align-items: center; gap: 6px; background: #f0f0f0; padding: 4px; border-radius: 8px; }
 .nav-btn { padding: 5px 10px; cursor: pointer; border: none; background: #fff; border-radius: 6px; font-size: 12px; font-weight: bold; }
-.current-month-label { font-size: 14px; font-weight: bold; color: #333; padding: 0 10px; min-width: 110px; text-align: center; }
+.date-label { font-size: 14px; font-weight: bold; color: #333; padding: 0 10px; min-width: 110px; text-align: center; }
 
 /* 週表示グリッド */
 .week-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
 .day-wrap { display: flex; flex-direction: column; gap: 8px; }
 .day-header { text-align: center; font-size: 11px; padding: 8px 0; background: #f8f9fa; border-radius: 6px; border: 1px solid #eee; }
 .day-header b { display: block; font-size: 15px; color: #333; }
+
+/* 1時間 = 50px (15分=12.5px) に設定。8h = 400px にオレンジ線 */
 .day-col { 
   position: relative; border: 1px solid #ddd; border-radius: 8px; background: #fff; 
   min-height: 650px; padding: 0;
@@ -42,24 +51,34 @@ body { background-color: #fafafa; padding: 15px; font-family: var(--font-sans); 
 .m-day-num { font-size: 12px; font-weight: bold; color: #999; margin-bottom: 5px; }
 .m-day-box.is-today { border-color: #4285f4; background: #f0f7ff; }
 .m-day-box.not-current { opacity: 0.3; }
-.m-load-dot { width: 40px; height: 40px; border-radius: 50%; margin: 5px auto; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: bold; }
+.m-load-dot { width: 44px; height: 44px; border-radius: 50%; margin: 5px auto; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: bold; }
 
-/* タスク要素 */
-.task-block { width: 100%; border: 1px solid rgba(0,0,0,0.1); border-radius: 4px; cursor: grab; user-select: none; display: flex; align-items: center; padding: 0 6px; font-size: 11px; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 0; transition: opacity 0.3s; }
+/* タスク・予定要素 */
+.task-block { 
+  width: 100%; border: 1px solid rgba(0,0,0,0.1); border-radius: 4px; cursor: grab; user-select: none; 
+  display: flex; align-items: center; padding: 0 6px; font-size: 11px; font-weight: bold; 
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 0; transition: opacity 0.3s;
+}
 .task-block.is-done { opacity: 0.4; }
-.task-block.external-event { border-style: dashed; border-width: 2px; } /* 外部予定は点線 */
+.task-block.external-event { border-style: dashed; border-width: 2px; cursor: default; }
 .task-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; border: none; background: transparent; font-family: inherit; font-size: inherit; font-weight: inherit; color: inherit; outline: none; }
 .done-check { margin-right: 4px; cursor: pointer; width: 13px; height: 13px; flex-shrink: 0; }
 
-.sidebar { width: 300px; background: #fbfbfb; border-radius: 12px; padding: 20px; border: 1px solid #ececec; position: sticky; top: 15px; }
+/* サイドバー要素 */
 .task-pool { display: flex; flex-direction: column; gap: 8px; min-height: 120px; margin-bottom: 20px; padding: 10px; border: 2px dashed #ddd; background: #fff; border-radius: 8px; }
 .pool-task { padding: 10px; border-radius: 8px; cursor: grab; font-size: 12px; font-weight: bold; border: 1px solid #eee; background: #fff; display: flex; align-items: center; justify-content: space-between; }
 .add-btn { width: 100%; padding: 10px; background: #222; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; }
 .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 1000; justify-content: center; align-items: center; font-weight: bold; }
+
+.load-bar-bg { height: 6px; background: #eee; border-radius: 3px; overflow: hidden; }
+.load-bar-fill { height: 100%; width: 0%; transition: width 0.4s; }
+.load-pct { font-size: 10px; text-align: center; margin-top: 4px; color: #888; font-weight: bold; }
 </style>
 </head>
 <body>
+
 <div id="loading" class="loading-overlay">同期中...</div>
+
 <div class="main-container">
   <div class="planner">
     <div class="header">
@@ -72,19 +91,22 @@ body { background-color: #fafafa; padding: 15px; font-family: var(--font-sans); 
       </div>
       <div class="nav-area">
         <button class="nav-btn" onclick="changeNav(-1)">←</button>
-        <div id="date-label" class="current-month-label">----</div>
+        <div id="date-label" class="date-label">----</div>
         <button class="nav-btn" onclick="changeNav(1)">→</button>
       </div>
     </div>
     <div id="view-content"></div>
   </div>
+
   <div class="sidebar">
-    <div id="auth-section"><button class="auth-btn" style="width:100%; padding:10px; margin-bottom:10px;" onclick="handleAuthClick()">Google連携</button></div>
+    <div id="auth-section"><button class="auth-btn" style="width:100%; padding:10px; margin-bottom:15px; background:#4285f4; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="handleAuthClick()">Google連携を開始</button></div>
     <div style="font-size: 13px; font-weight: bold; margin-bottom: 10px;">📦 ストック</div>
     <div id="task-pool" class="task-pool"></div>
     <div class="add-row" style="display:flex; flex-direction:column; gap:5px;">
-      <input id="new-name" style="padding:8px; border:1px solid #ddd; border-radius:4px;" type="text" placeholder="新規タスク...">
-      <select id="new-size" style="padding:8px; border:1px solid #ddd; border-radius:4px;"><option value="8h">8h</option><option value="4h" selected>4h</option><option value="2h">2h</option><option value="1h">1h</option><option value="30m">30m</option><option value="15m">15m</option></select>
+      <input id="new-name" style="padding:10px; border:1px solid #ddd; border-radius:6px;" type="text" placeholder="新規タスク名...">
+      <select id="new-size" style="padding:8px; border:1px solid #ddd; border-radius:6px;">
+        <option value="8h">8h</option><option value="4h" selected>4h</option><option value="2h">2h</option><option value="1h">1h</option><option value="30m">30m</option><option value="15m">15m</option>
+      </select>
       <button class="add-btn" onclick="addTask()">+ 追加</button>
     </div>
   </div>
@@ -95,7 +117,7 @@ body { background-color: #fafafa; padding: 15px; font-family: var(--font-sans); 
 <script>
 const CLIENT_ID = '372218570250-clb1ol13sjcn259r2ih0j2k7r20koiji.apps.googleusercontent.com';
 const CALENDAR_ID = 'c_a64ea04dfd2c489c485423621ddb6a89de2a609d3e2e2c089248ef9f6311244b@group.calendar.google.com';
-const PRIMARY_CAL_ID = 'primary'; // メインカレンダーからも取得するため
+const PRIMARY_CAL_ID = 'primary';
 const SIZES = {'8h':8, '4h':4, '2h':2, '1h':1, '30m':0.5, '15m':0.25};
 const SIZE_STYLES = {
   '8h': {bg:'#FAEEDA', border:'#BA7517', text:'#633806'}, '4h': {bg:'#E6F1FB', border:'#378ADD', text:'#0C447C'},
@@ -124,18 +146,15 @@ async function fetchEvents() {
       tMax = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 1);
     }
 
-    // 1. 本ツールの専用カレンダーから取得
     const resp = await gapi.client.calendar.events.list({ calendarId: CALENDAR_ID, timeMin: tMin.toISOString(), timeMax: tMax.toISOString(), singleEvents: true });
-    tasks = (resp.result.items || []).map(e => parseEvent(e, false));
+    tasks = (resp.result.items || []).filter(e => e.start.dateTime).map(e => parseEvent(e, false));
 
-    // 2. メインカレンダー（個人の予定）から取得
     const respPrimary = await gapi.client.calendar.events.list({ calendarId: PRIMARY_CAL_ID, timeMin: tMin.toISOString(), timeMax: tMax.toISOString(), singleEvents: true });
     const primaryEvents = (respPrimary.result.items || [])
+      .filter(e => e.start.dateTime) // 【修正】終日予定を除外
       .filter(e => {
-        // 参加ステータスの確認: 承諾済み(accepted) または 自分が主催者(self) かつ 未回答以外
         const me = e.attendees?.find(a => a.self);
-        if(!me) return true; // 参加者リストがない場合は表示
-        return me.responseStatus === 'accepted' || me.responseStatus === 'needsAction'; 
+        return !me || (me.responseStatus === 'accepted' || me.responseStatus === 'needsAction');
       })
       .map(e => parseEvent(e, true));
     
@@ -146,18 +165,12 @@ async function fetchEvents() {
 }
 
 function parseEvent(e, isExternal) {
-  const start = new Date(e.start.dateTime || e.start.date);
-  const end = new Date(e.end.dateTime || e.end.date);
+  const start = new Date(e.start.dateTime);
+  const end = new Date(e.end.dateTime);
   const h = Math.max((end - start) / 3600000, 0.25);
   let size = '1h'; let minD = 100;
   Object.keys(SIZES).forEach(k => { if(Math.abs(SIZES[k]-h) < minD) { minD=Math.abs(SIZES[k]-h); size=k; } });
-  return { 
-    id: e.id, 
-    name: e.summary || '(無題)', 
-    h, size, start, 
-    isDone: e.summary?.startsWith('✅'),
-    isExternal: isExternal // メインカレンダーからの予定かどうか
-  };
+  return { id: e.id, name: e.summary || '(無題)', h, size, start, isDone: e.summary?.startsWith('✅'), isExternal };
 }
 
 function render() {
@@ -187,9 +200,11 @@ function renderWeek(monday) {
       <div class="day-col" ondragover="event.preventDefault()" ondrop="handleDrop(event, ${i})">
         ${dayTasks.map(t => {
           const style = SIZE_STYLES[t.size] || SIZE_STYLES['1h'];
+          // 【修正】高さを1時間=50px（15分=12.5px）で一律計算
+          const blockHeight = Math.max(t.h * 50, 22);
           return `<div class="task-block ${t.isDone?'is-done':''} ${t.isExternal?'external-event':''}" 
                draggable="${!t.isExternal}" ondragstart="dragState='${t.id}'" 
-               style="height:${Math.max(t.h*50,22)}px; background:${t.isExternal?'#f9f9f9':style.bg}; border:1px solid ${t.isExternal?'#ccc':style.border}; color:${style.text};">
+               style="height:${blockHeight}px; background:${t.isExternal?'#f9f9f9':style.bg}; border:1px solid ${t.isExternal?'#ccc':style.border}; color:${style.text};">
             ${!t.isExternal ? `<input type="checkbox" class="done-check" ${t.isDone?'checked':''} onclick="toggleDone('${t.id}')">` : '📅'}
             <span class="task-name">${t.name.replace('✅','')}</span>
           </div>`
@@ -222,12 +237,12 @@ function renderMonth() {
 
 function renderPool() {
   const pool = tasks.filter(t => t.start.getHours() === 0 && !t.isExternal);
-  document.getElementById('task-pool').innerHTML = pool.map(t => `<div class="pool-task" draggable="true" ondragstart="dragState='${t.id}'" style="background:${SIZE_STYLES[t.size].bg}"><span>${t.name}</span><button onclick="deleteTask('${t.id}')">×</button></div>`).join('') || 'なし';
+  document.getElementById('task-pool').innerHTML = pool.map(t => `<div class="pool-task" draggable="true" ondragstart="dragState='${t.id}'" style="background:${SIZE_STYLES[t.size].bg}"><span>${t.name}</span><button style="border:none; background:transparent; cursor:pointer;" onclick="deleteTask('${t.id}')">×</button></div>`).join('') || 'なし';
 }
 
 async function handleDrop(e, dayIdx) {
   const t = tasks.find(x => x.id === dragState);
-  if(!t || t.isExternal) return; // 外部予定は動かさない
+  if(!t || t.isExternal) return;
   const monday = getMonday(baseDate);
   const start = new Date(monday); start.setDate(monday.getDate() + dayIdx); start.setHours(9,0,0,0);
   showLoading(true);
@@ -247,8 +262,7 @@ async function addTask() {
 }
 
 async function toggleDone(id) {
-    const t = tasks.find(x => x.id === id);
-    if(t.isExternal) return;
+    const t = tasks.find(x => x.id === id); if(t.isExternal) return;
     const newName = t.isDone ? t.name.replace('✅','') : '✅'+t.name;
     showLoading(true);
     await gapi.client.calendar.events.patch({ calendarId: CALENDAR_ID, eventId: id, resource: { summary: newName } });
