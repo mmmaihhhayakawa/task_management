@@ -4,16 +4,13 @@
 <meta charset="UTF-8">
 <title>タスク管理プランナー Pro</title>
 <style>
+/* 共通スタイル */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root { --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 body { background-color: #fafafa; padding: 15px; font-family: var(--font-sans); }
 
 .main-container { display: flex; gap: 20px; max-width: 1400px; margin: 0 auto; align-items: flex-start; }
-
-/* 左側：カレンダー。高さをしっかり確保 */
 .planner { flex: 1; background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #eee; box-shadow: 0 4px 6px rgba(0,0,0,0.05); min-height: 800px; }
-
-/* 右側：サイドバー（ストック） */
 .sidebar { width: 300px; background: #fbfbfb; border-radius: 12px; padding: 20px; border: 1px solid #ececec; position: sticky; top: 15px; }
 
 .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
@@ -27,18 +24,20 @@ body { background-color: #fafafa; padding: 15px; font-family: var(--font-sans); 
 .day-header { text-align: center; font-size: 11px; padding: 8px 0; background: #f8f9fa; border-radius: 6px; border: 1px solid #eee; }
 .day-header b { display: block; font-size: 15px; color: #333; }
 
-/* ★ 1時間 = 50px に拡大して縦幅を伸ばす。8h = 400px にオレンジ線 ★ */
+/* ★背景線：6h(300px)に薄い線、8h(400px)に濃いオレンジ線を配置★ */
 .day-col { 
   position: relative; border: 1px solid #ddd; border-radius: 8px; background: #fff; 
   min-height: 650px; padding: 0;
-  background-image: linear-gradient(to bottom, transparent 399px, #EF9F27 399px, #EF9F27 401px, #fffcf8 401px); 
+  background-image: 
+    linear-gradient(to bottom, transparent 299px, #e0e0e0 299px, #e0e0e0 300px, transparent 300px),
+    linear-gradient(to bottom, transparent 399px, #EF9F27 399px, #EF9F27 401px, #fffcf8 401px); 
 }
 .day-col.drop-over { border-color: #378ADD; background-color: #f0f7ff; }
 
 .task-block { 
   width: 100%; border: 1px solid rgba(0,0,0,0.1); border-radius: 4px; cursor: grab; user-select: none; 
   display: flex; align-items: center; padding: 0 6px; font-size: 11px; font-weight: bold; 
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 0;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 0; transition: opacity 0.3s;
 }
 .task-block.is-done { opacity: 0.4; }
 .task-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; border: none; background: transparent; font-family: inherit; font-size: inherit; font-weight: inherit; color: inherit; outline: none; }
@@ -136,8 +135,6 @@ async function fetchEvents() {
       Object.keys(SIZES).forEach(k => { if(Math.abs(SIZES[k].h - diffH) < minD) { minD=Math.abs(SIZES[k].h-diffH); sz=k; } });
       const isDone = e.summary.startsWith(DONE_PREFIX);
       tasks.push({ id: e.id, name: isDone ? e.summary.replace(DONE_PREFIX, '') : e.summary, size: sz, isDone });
-      
-      // ★ 0時台（深夜）以外をカレンダーに表示
       if (start.getHours() >= 1) {
         let dIdx = start.getDay() - 1; if (dIdx === -1) dIdx = 6;
         if (dIdx >= 0 && dIdx <= 4) dayTasks[dIdx].push(e.id);
@@ -154,7 +151,7 @@ async function addTask() {
   if(!name) return;
   showLoading(true);
   const m = getMonday(baseDate);
-  const start = new Date(m); start.setHours(0,0,0,0); // ストックは月曜0時
+  const start = new Date(m); start.setHours(0,0,0,0);
   const end = new Date(start); end.setMinutes(SIZES[size].h * 60);
   try {
     await gapi.client.calendar.events.insert({ calendarId: CALENDAR_ID, resource: { summary: name, start: { dateTime: start.toISOString(), timeZone: 'Asia/Tokyo' }, end: { dateTime: end.toISOString(), timeZone: 'Asia/Tokyo' } } });
@@ -217,7 +214,6 @@ function render() {
       const s = SIZES[t.size];
       const block = document.createElement('div');
       block.className = `task-block ${t.isDone?'is-done':''}`; block.draggable = true;
-      // ★ 1時間 = 50px。15m = 12.5px だが、最低22pxを確保。
       let hPx = Math.max(s.h * 50, 22); 
       block.style.cssText = `height:${hPx}px; background:${s.bg}; border:1px solid ${s.border}; color:${s.text};`;
       const cb = document.createElement('input'); cb.type='checkbox'; cb.className='done-check'; cb.checked=t.isDone; cb.onclick=(e)=>{ e.stopPropagation(); toggleDone(tid); };
@@ -235,10 +231,13 @@ function render() {
       col.appendChild(block);
       used += s.h;
     });
+
     const fill = document.getElementById(`fill-${d}`); const pct = document.getElementById(`pct-${d}`);
     if(fill) { 
       fill.style.width = (used/12*100) + '%'; 
-      fill.style.backgroundColor = used > 10 ? '#e24b4a' : used > 8 ? '#ef9f27' : '#1d9e75'; 
+      // ★色判定の修正★
+      // 8h超なら赤、6h超ならオレンジ（黄色）、それ以外（6h以下）なら緑
+      fill.style.backgroundColor = used > 8 ? '#e24b4a' : used > 6 ? '#ef9f27' : '#1d9e75'; 
     }
     if(pct) pct.textContent = `${used}h / 12h`;
   });
