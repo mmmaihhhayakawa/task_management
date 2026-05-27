@@ -2,81 +2,109 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>タスク管理プランナー</title>
+<title>タスク管理プランナー Pro</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root { --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-body { background-color: #fafafa; padding: 20px; font-family: var(--font-sans); }
-.planner { max-width: 1100px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #eee; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+body { background-color: #fafafa; padding: 15px; font-family: var(--font-sans); overflow-x: hidden; }
+
+/* 全体レイアウト：右サイドバー形式 */
+.main-container { display: flex; gap: 20px; max-width: 1400px; margin: 0 auto; align-items: flex-start; }
+.planner { flex: 1; background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #eee; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+
+/* 右サイドバー（プール） */
+.sidebar { width: 280px; background: #fbfbfb; border-radius: 12px; padding: 20px; border: 1px solid #ececec; position: sticky; top: 15px; max-height: 95vh; overflow-y: auto; }
+
 .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-.title { font-size: 22px; font-weight: 800; color: #222; }
-.nav-area { display: flex; align-items: center; gap: 8px; background: #f0f0f0; padding: 4px; border-radius: 8px; }
-.nav-btn { padding: 6px 12px; cursor: pointer; border: none; background: #fff; border-radius: 6px; font-size: 13px; font-weight: bold; }
-.current-month-label { font-size: 15px; font-weight: bold; color: #333; padding: 0 15px; min-width: 120px; text-align: center; }
+.title { font-size: 20px; font-weight: 800; color: #222; }
+.nav-area { display: flex; align-items: center; gap: 6px; background: #f0f0f0; padding: 4px; border-radius: 8px; }
+.nav-btn { padding: 5px 10px; cursor: pointer; border: none; background: #fff; border-radius: 6px; font-size: 12px; font-weight: bold; }
+.current-month-label { font-size: 14px; font-weight: bold; color: #333; padding: 0 10px; min-width: 110px; text-align: center; }
 
-.cols { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 8px; }
+/* カレンダーグリッド */
+.cols { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 8px; }
 .day-wrap { display: flex; flex-direction: column; gap: 8px; }
-.day-header { text-align: center; font-size: 11px; padding: 10px 0; background: #f8f9fa; border-radius: 6px; border: 1px solid #eee; }
-.day-header b { display: block; font-size: 16px; color: #333; margin-top: 2px; }
+.day-header { text-align: center; font-size: 11px; padding: 8px 0; background: #f8f9fa; border-radius: 6px; border: 1px solid #eee; }
+.day-header b { display: block; font-size: 15px; color: #333; }
 
-/* 背景の線を厳密に 8h = 288px (1h=36px) に固定 */
+/* ★ 1時間 = 40px で計算。8h = 320px にオレンジ線 ★ */
 .day-col { 
-  position: relative; border: 1px solid #e0e0e0; border-radius: 8px; background: #fff; min-height: 480px; padding: 4px; 
-  background-image: linear-gradient(to bottom, transparent 287px, #EF9F27 287px, #EF9F27 289px, #fffcf8 289px); 
+  position: relative; border: 1px solid #ddd; border-radius: 8px; background: #fff; 
+  min-height: 480px; padding: 0; /* 隙間をなくして計算を正確に */
+  background-image: linear-gradient(to bottom, transparent 319px, #EF9F27 319px, #EF9F27 321px, #fffcf8 321px); 
 }
 .day-col.drop-over { border-color: #378ADD; background-color: #f0f7ff; }
 
-.task-block { border-radius: 6px; cursor: grab; user-select: none; display: flex; align-items: center; padding: 0 8px; font-size: 11px; font-weight: bold; margin-bottom: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); overflow: hidden; position: relative; transition: opacity 0.3s; }
+/* タスクブロック：高さを厳密に指定 */
+.task-block { 
+  width: 100%; border: 1px solid rgba(0,0,0,0.1); border-radius: 4px; cursor: grab; user-select: none; 
+  display: flex; align-items: center; padding: 0 6px; font-size: 11px; font-weight: bold; 
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05); overflow: hidden; transition: opacity 0.3s;
+  margin-bottom: 0; /* 隙間なしで積み上げる */
+}
 .task-block.is-done { opacity: 0.4; }
 .task-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; border: none; background: transparent; font-family: inherit; font-size: inherit; font-weight: inherit; color: inherit; outline: none; }
 .task-block.is-done .task-name { text-decoration: line-through; }
-.done-check { margin-right: 6px; cursor: pointer; width: 14px; height: 14px; }
+.done-check { margin-right: 4px; cursor: pointer; width: 13px; height: 13px; flex-shrink: 0; }
 
-.load-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 25px; }
+.load-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 10px; }
 .load-bar-bg { height: 6px; background: #eee; border-radius: 3px; overflow: hidden; }
 .load-bar-fill { height: 100%; width: 0%; transition: width 0.4s; }
-.load-pct { font-size: 10px; text-align: center; margin-top: 5px; color: #888; font-weight: bold; }
+.load-pct { font-size: 10px; text-align: center; margin-top: 4px; color: #888; font-weight: bold; }
 
-.sidebar { background: #fbfbfb; border-radius: 10px; padding: 20px; border: 1px solid #ececec; }
-.task-pool { display: flex; flex-wrap: wrap; gap: 8px; min-height: 60px; margin-bottom: 15px; padding: 12px; border: 2px dashed #ddd; background: #fff; border-radius: 8px; }
-.pool-task { padding: 8px 14px; border-radius: 20px; cursor: grab; font-size: 12px; font-weight: bold; border: 1px solid #eee; background: #fff; display: flex; align-items: center; gap: 8px; }
-.del-btn { cursor: pointer; border: none; background: #ddd; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; color: #fff; line-height: 16px; }
-.add-row { display: flex; gap: 10px; }
-.add-row input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
-.auth-btn { padding: 8px 16px; border-radius: 6px; border: none; background: #4285f4; color: white; cursor: pointer; font-weight: bold; margin-bottom: 10px; }
+/* サイドバー内の要素 */
+.sidebar-title { font-size: 13px; font-weight: bold; margin-bottom: 12px; color: #555; display: flex; align-items: center; gap: 5px; }
+.task-pool { display: flex; flex-direction: column; gap: 8px; min-height: 100px; margin-bottom: 20px; padding: 10px; border: 2px dashed #ddd; background: #fff; border-radius: 8px; }
+.pool-task { padding: 10px; border-radius: 8px; cursor: grab; font-size: 12px; font-weight: bold; border: 1px solid #eee; background: #fff; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
+.add-row { display: flex; flex-direction: column; gap: 8px; }
+.add-row input { padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
+.add-row select { padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
+.add-btn { padding: 10px; background: #222; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+
+.auth-btn { width: 100%; padding: 10px; border-radius: 6px; border: none; background: #4285f4; color: white; cursor: pointer; font-weight: bold; margin-bottom: 15px; font-size: 13px; }
 .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 1000; justify-content: center; align-items: center; font-weight: bold; }
 </style>
 </head>
 <body>
+
 <div id="loading" class="loading-overlay">同期中...</div>
-<div class="planner">
-  <div id="auth-section"><button class="auth-btn" id="login-btn" onclick="handleAuthClick()">Googleでログインして同期開始</button></div>
-  <div class="header">
-    <div class="title">タスク管理</div>
-    <div class="nav-area">
-      <button class="nav-btn" onclick="changeWeek(-7)">← 前週</button>
-      <div id="month-label" class="current-month-label">----</div>
-      <button class="nav-btn" onclick="changeWeek(7)">次週 →</button>
+
+<div class="main-container">
+  <div class="planner">
+    <div class="header">
+      <div class="title">タスク管理</div>
+      <div class="nav-area">
+        <button class="nav-btn" onclick="changeWeek(-7)">← 前週</button>
+        <div id="month-label" class="current-month-label">----</div>
+        <button class="nav-btn" onclick="changeWeek(7)">次週 →</button>
+      </div>
     </div>
+    <div class="cols" id="cal-cols"></div>
+    <div class="load-row" id="load-row"></div>
   </div>
-  <div class="cols" id="cal-cols"></div>
-  <div class="load-row" id="load-row"></div>
+
   <div class="sidebar">
+    <div id="auth-section">
+      <button class="auth-btn" onclick="handleAuthClick()">Google連携を開始</button>
+    </div>
+    <div class="sidebar-title">📦 ストック（今週分）</div>
     <div id="task-pool" class="task-pool"></div>
     <div class="add-row">
-      <input id="new-name" type="text" placeholder="新しいタスクを追加...">
-      <select id="new-size"><option value="8h">8h</option><option value="4h" selected>4h</option><option value="2h">2h</option><option value="1h">1h</option><option value="30m">30m</option><option value="15m">15m</option></select>
-      <button class="add-btn" onclick="addTask()">+ 追加</button>
+      <input id="new-name" type="text" placeholder="新規タスク名...">
+      <select id="new-size">
+        <option value="8h">8h</option><option value="4h" selected>4h</option><option value="2h">2h</option><option value="1h">1h</option><option value="30m">30m</option><option value="15m">15m</option>
+      </select>
+      <button class="add-btn" onclick="addTask()">+ ストックに追加</button>
     </div>
   </div>
 </div>
 
 <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
 <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+
 <script>
 const CLIENT_ID = '372218570250-clb1ol13sjcn259r2ih0j2k7r20koiji.apps.googleusercontent.com';
 const CALENDAR_ID = 'c_a64ea04dfd2c489c485423621ddb6a89de2a609d3e2e2c089248ef9f6311244b@group.calendar.google.com';
-const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
 const DONE_PREFIX = '✅';
 const SIZES = {
   '8h':  { h:8,    bg:'#FAEEDA', border:'#BA7517', text:'#633806' },
@@ -91,7 +119,7 @@ let tokenClient, gapiInited=false, gisInited=false, baseDate=new Date(), tasks=[
 
 function showLoading(s) { document.getElementById('loading').style.display = s ? 'flex' : 'none'; }
 function gapiLoaded() { gapi.load('client', async () => { await gapi.client.init({ discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"] }); gapiInited=true; tryAutoLogin(); }); }
-function gisLoaded() { tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPES, callback: '' }); gisInited=true; tryAutoLogin(); }
+function gisLoaded() { tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPES || 'https://www.googleapis.com/auth/calendar.events', callback: '' }); gisInited=true; tryAutoLogin(); }
 function tryAutoLogin() { const t=sessionStorage.getItem('gcal_token'); if(t && gapiInited){ gapi.client.setToken({access_token:t}); document.getElementById('auth-section').style.display='none'; fetchEvents(); } }
 async function handleAuthClick() { tokenClient.callback=async(r)=>{ if(r.error!==undefined)throw(r); sessionStorage.setItem('gcal_token',r.access_token); document.getElementById('auth-section').style.display='none'; await fetchEvents(); }; tokenClient.requestAccessToken({prompt:'consent'}); }
 
@@ -106,19 +134,15 @@ async function fetchEvents() {
     const resp = await gapi.client.calendar.events.list({ calendarId: CALENDAR_ID, timeMin: timeMin.toISOString(), timeMax: timeMax.toISOString(), singleEvents: true, orderBy: 'startTime' });
     const events = resp.result.items || [];
     dayTasks = {0:[], 1:[], 2:[], 3:[], 4:[]}; tasks = [];
-
-    // ★重要：イベントをID（作成順に近い）でソートして順番を固定
     events.sort((a, b) => (a.id > b.id ? 1 : -1));
-
     events.forEach(e => {
       const start = new Date(e.start.dateTime || e.start.date);
       const end = new Date(e.end.dateTime || e.end.date);
       const diffH = (end - start) / (1000 * 60 * 60);
       let sz = '1h'; let minD = 100;
-      Object.keys(SIZES).forEach(k => { if(Math.abs(SIZES[k].h - diffH) < minD) { minD=Math.abs(SIZES[k].h-diffH); sz=k; } });
+      Object.keys(SIZES).forEach(k => { if(Math.abs(SIZES[k].h - diffH) < minD) { minD=Math.abs(SIZES[key].h-diffH); sz=k; } });
       const isDone = e.summary.startsWith(DONE_PREFIX);
-      const name = isDone ? e.summary.replace(DONE_PREFIX, '') : e.summary;
-      tasks.push({ id: e.id, name, size: sz, isDone });
+      tasks.push({ id: e.id, name: isDone ? e.summary.replace(DONE_PREFIX, '') : e.summary, size: sz, isDone });
       if (start.getHours() >= 1) {
         let dIdx = start.getDay() - 1; if (dIdx === -1) dIdx = 6;
         if (dIdx >= 0 && dIdx <= 4) dayTasks[dIdx].push(e.id);
@@ -137,12 +161,9 @@ async function addTask() {
   const m = getMonday(baseDate);
   const start = new Date(m); start.setHours(0,0,0,0);
   const end = new Date(start); end.setMinutes(SIZES[size].h * 60);
-  try {
-    await gapi.client.calendar.events.insert({ calendarId: CALENDAR_ID, resource: { summary: name, start: { dateTime: start.toISOString(), timeZone: 'Asia/Tokyo' }, end: { dateTime: end.toISOString(), timeZone: 'Asia/Tokyo' } } });
-    document.getElementById('new-name').value = '';
-    await fetchEvents();
-  } catch (e) { alert(e.result.error.message); }
-  showLoading(false);
+  await gapi.client.calendar.events.insert({ calendarId: CALENDAR_ID, resource: { summary: name, start: { dateTime: start.toISOString(), timeZone: 'Asia/Tokyo' }, end: { dateTime: end.toISOString(), timeZone: 'Asia/Tokyo' } } });
+  document.getElementById('new-name').value = '';
+  await fetchEvents();
 }
 
 async function handleDrop(toDay) {
@@ -198,16 +219,18 @@ function render() {
       const s = SIZES[t.size];
       const block = document.createElement('div');
       block.className = `task-block ${t.isDone?'is-done':''}`; block.draggable = true;
-      // ★1h = 36px で計算。マージンの4pxを考慮
-      let hPx = (s.h * 36) - 4; 
-      block.style.cssText = `height:${hPx}px; background:${s.bg}; border:1px solid ${s.border}; color:${s.text}; margin-bottom:4px;`;
+      
+      // ★1h = 40px で再計算。15m = 10px だが、最低20pxを確保して文字を保護。
+      let hPx = Math.max(s.h * 40, 20); 
+      block.style.cssText = `height:${hPx}px; background:${s.bg}; border:1px solid ${s.border}; color:${s.text};`;
       
       const cb = document.createElement('input'); cb.type='checkbox'; cb.className='done-check'; cb.checked=t.isDone; cb.onclick=()=>toggleDone(tid);
       const inp = document.createElement('input'); inp.className='task-name'; inp.value=t.name; inp.onchange=(e)=>updateTaskName(tid, e.target.value);
       
       block.appendChild(cb); block.appendChild(inp);
       block.ondragstart = () => dragState = { taskId: tid };
-      block.ondblclick = async () => {
+      block.ondblclick = async (e) => {
+          if(e.target.type === 'checkbox') return;
           showLoading(true);
           const start = new Date(getMonday(baseDate)); start.setHours(0,0,0,0);
           const end = new Date(start); end.setMinutes(s.h * 60);
@@ -220,7 +243,6 @@ function render() {
     const fill = document.getElementById(`fill-${d}`); const pct = document.getElementById(`pct-${d}`);
     if(fill) { 
       fill.style.width = (used/12*100) + '%'; 
-      // 背景線(8h)に合わせて 8h超でオレンジ、10h超で赤
       fill.style.backgroundColor = used > 10 ? '#e24b4a' : used > 8 ? '#ef9f27' : '#1d9e75'; 
     }
     if(pct) pct.textContent = `${used}h / 12h`;
