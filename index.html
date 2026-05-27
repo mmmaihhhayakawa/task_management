@@ -6,14 +6,15 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root { --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-body { background-color: #fafafa; padding: 15px; font-family: var(--font-sans); overflow-x: hidden; }
+body { background-color: #fafafa; padding: 15px; font-family: var(--font-sans); }
 
-/* 全体レイアウト：右サイドバー形式 */
 .main-container { display: flex; gap: 20px; max-width: 1400px; margin: 0 auto; align-items: flex-start; }
-.planner { flex: 1; background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #eee; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
 
-/* 右サイドバー（プール） */
-.sidebar { width: 280px; background: #fbfbfb; border-radius: 12px; padding: 20px; border: 1px solid #ececec; position: sticky; top: 15px; max-height: 95vh; overflow-y: auto; }
+/* 左側：カレンダー。高さをしっかり確保 */
+.planner { flex: 1; background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #eee; box-shadow: 0 4px 6px rgba(0,0,0,0.05); min-height: 800px; }
+
+/* 右側：サイドバー（ストック） */
+.sidebar { width: 300px; background: #fbfbfb; border-radius: 12px; padding: 20px; border: 1px solid #ececec; position: sticky; top: 15px; }
 
 .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .title { font-size: 20px; font-weight: 800; color: #222; }
@@ -21,26 +22,23 @@ body { background-color: #fafafa; padding: 15px; font-family: var(--font-sans); 
 .nav-btn { padding: 5px 10px; cursor: pointer; border: none; background: #fff; border-radius: 6px; font-size: 12px; font-weight: bold; }
 .current-month-label { font-size: 14px; font-weight: bold; color: #333; padding: 0 10px; min-width: 110px; text-align: center; }
 
-/* カレンダーグリッド */
 .cols { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 8px; }
 .day-wrap { display: flex; flex-direction: column; gap: 8px; }
 .day-header { text-align: center; font-size: 11px; padding: 8px 0; background: #f8f9fa; border-radius: 6px; border: 1px solid #eee; }
 .day-header b { display: block; font-size: 15px; color: #333; }
 
-/* ★ 1時間 = 40px で計算。8h = 320px にオレンジ線 ★ */
+/* ★ 1時間 = 50px に拡大して縦幅を伸ばす。8h = 400px にオレンジ線 ★ */
 .day-col { 
   position: relative; border: 1px solid #ddd; border-radius: 8px; background: #fff; 
-  min-height: 480px; padding: 0; /* 隙間をなくして計算を正確に */
-  background-image: linear-gradient(to bottom, transparent 319px, #EF9F27 319px, #EF9F27 321px, #fffcf8 321px); 
+  min-height: 650px; padding: 0;
+  background-image: linear-gradient(to bottom, transparent 399px, #EF9F27 399px, #EF9F27 401px, #fffcf8 401px); 
 }
 .day-col.drop-over { border-color: #378ADD; background-color: #f0f7ff; }
 
-/* タスクブロック：高さを厳密に指定 */
 .task-block { 
   width: 100%; border: 1px solid rgba(0,0,0,0.1); border-radius: 4px; cursor: grab; user-select: none; 
   display: flex; align-items: center; padding: 0 6px; font-size: 11px; font-weight: bold; 
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05); overflow: hidden; transition: opacity 0.3s;
-  margin-bottom: 0; /* 隙間なしで積み上げる */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 0;
 }
 .task-block.is-done { opacity: 0.4; }
 .task-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; border: none; background: transparent; font-family: inherit; font-size: inherit; font-weight: inherit; color: inherit; outline: none; }
@@ -52,16 +50,13 @@ body { background-color: #fafafa; padding: 15px; font-family: var(--font-sans); 
 .load-bar-fill { height: 100%; width: 0%; transition: width 0.4s; }
 .load-pct { font-size: 10px; text-align: center; margin-top: 4px; color: #888; font-weight: bold; }
 
-/* サイドバー内の要素 */
-.sidebar-title { font-size: 13px; font-weight: bold; margin-bottom: 12px; color: #555; display: flex; align-items: center; gap: 5px; }
-.task-pool { display: flex; flex-direction: column; gap: 8px; min-height: 100px; margin-bottom: 20px; padding: 10px; border: 2px dashed #ddd; background: #fff; border-radius: 8px; }
-.pool-task { padding: 10px; border-radius: 8px; cursor: grab; font-size: 12px; font-weight: bold; border: 1px solid #eee; background: #fff; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
+.task-pool { display: flex; flex-direction: column; gap: 8px; min-height: 120px; margin-bottom: 20px; padding: 10px; border: 2px dashed #ddd; background: #fff; border-radius: 8px; }
+.pool-task { padding: 10px; border-radius: 8px; cursor: grab; font-size: 12px; font-weight: bold; border: 1px solid #eee; background: #fff; display: flex; align-items: center; justify-content: space-between; }
 .add-row { display: flex; flex-direction: column; gap: 8px; }
 .add-row input { padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
-.add-row select { padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
 .add-btn { padding: 10px; background: #222; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
 
-.auth-btn { width: 100%; padding: 10px; border-radius: 6px; border: none; background: #4285f4; color: white; cursor: pointer; font-weight: bold; margin-bottom: 15px; font-size: 13px; }
+.auth-btn { width: 100%; padding: 10px; border-radius: 6px; border: none; background: #4285f4; color: white; cursor: pointer; font-weight: bold; margin-bottom: 15px; }
 .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 1000; justify-content: center; align-items: center; font-weight: bold; }
 </style>
 </head>
@@ -84,10 +79,8 @@ body { background-color: #fafafa; padding: 15px; font-family: var(--font-sans); 
   </div>
 
   <div class="sidebar">
-    <div id="auth-section">
-      <button class="auth-btn" onclick="handleAuthClick()">Google連携を開始</button>
-    </div>
-    <div class="sidebar-title">📦 ストック（今週分）</div>
+    <div id="auth-section"><button class="auth-btn" onclick="handleAuthClick()">Google連携を開始</button></div>
+    <div style="font-size: 13px; font-weight: bold; margin-bottom: 10px;">📦 ストック</div>
     <div id="task-pool" class="task-pool"></div>
     <div class="add-row">
       <input id="new-name" type="text" placeholder="新規タスク名...">
@@ -107,19 +100,19 @@ const CLIENT_ID = '372218570250-clb1ol13sjcn259r2ih0j2k7r20koiji.apps.googleuser
 const CALENDAR_ID = 'c_a64ea04dfd2c489c485423621ddb6a89de2a609d3e2e2c089248ef9f6311244b@group.calendar.google.com';
 const DONE_PREFIX = '✅';
 const SIZES = {
-  '8h':  { h:8,    bg:'#FAEEDA', border:'#BA7517', text:'#633806' },
-  '4h':  { h:4,    bg:'#E6F1FB', border:'#378ADD', text:'#0C447C' },
-  '2h':  { h:2,    bg:'#EAF3DE', border:'#639922', text:'#27500A' },
-  '1h':  { h:1,    bg:'#E1F5EE', border:'#1D9E75', text:'#085041' },
-  '30m': { h:0.5,  bg:'#EEEDFE', border:'#7F77DD', text:'#3C3489' },
-  '15m': { h:0.25, bg:'#F1EFE8', border:'#888780', text:'#444441' }
+  '8h': {h:8, bg:'#FAEEDA', border:'#BA7517', text:'#633806'},
+  '4h': {h:4, bg:'#E6F1FB', border:'#378ADD', text:'#0C447C'},
+  '2h': {h:2, bg:'#EAF3DE', border:'#639922', text:'#27500A'},
+  '1h': {h:1, bg:'#E1F5EE', border:'#1D9E75', text:'#085041'},
+  '30m':{h:0.5, bg:'#EEEDFE', border:'#7F77DD', text:'#3C3489'},
+  '15m':{h:0.25, bg:'#F1EFE8', border:'#888780', text:'#444441'}
 };
 
 let tokenClient, gapiInited=false, gisInited=false, baseDate=new Date(), tasks=[], dayTasks={0:[],1:[],2:[],3:[],4:[]}, dragState=null;
 
 function showLoading(s) { document.getElementById('loading').style.display = s ? 'flex' : 'none'; }
 function gapiLoaded() { gapi.load('client', async () => { await gapi.client.init({ discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"] }); gapiInited=true; tryAutoLogin(); }); }
-function gisLoaded() { tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPES || 'https://www.googleapis.com/auth/calendar.events', callback: '' }); gisInited=true; tryAutoLogin(); }
+function gisLoaded() { tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: 'https://www.googleapis.com/auth/calendar.events', callback: '' }); gisInited=true; tryAutoLogin(); }
 function tryAutoLogin() { const t=sessionStorage.getItem('gcal_token'); if(t && gapiInited){ gapi.client.setToken({access_token:t}); document.getElementById('auth-section').style.display='none'; fetchEvents(); } }
 async function handleAuthClick() { tokenClient.callback=async(r)=>{ if(r.error!==undefined)throw(r); sessionStorage.setItem('gcal_token',r.access_token); document.getElementById('auth-section').style.display='none'; await fetchEvents(); }; tokenClient.requestAccessToken({prompt:'consent'}); }
 
@@ -131,18 +124,20 @@ async function fetchEvents() {
     const monday = getMonday(baseDate);
     const timeMin = new Date(monday);
     const timeMax = new Date(monday); timeMax.setDate(monday.getDate() + 7);
-    const resp = await gapi.client.calendar.events.list({ calendarId: CALENDAR_ID, timeMin: timeMin.toISOString(), timeMax: timeMax.toISOString(), singleEvents: true, orderBy: 'startTime' });
-    const events = resp.result.items || [];
+    const resp = await gapi.client.calendar.events.list({ calendarId: CALENDAR_ID, timeMin: timeMin.toISOString(), timeMax: timeMax.toISOString(), singleEvents: true });
+    const items = resp.result.items || [];
     dayTasks = {0:[], 1:[], 2:[], 3:[], 4:[]}; tasks = [];
-    events.sort((a, b) => (a.id > b.id ? 1 : -1));
-    events.forEach(e => {
+    items.sort((a, b) => (a.id > b.id ? 1 : -1));
+    items.forEach(e => {
       const start = new Date(e.start.dateTime || e.start.date);
       const end = new Date(e.end.dateTime || e.end.date);
       const diffH = (end - start) / (1000 * 60 * 60);
       let sz = '1h'; let minD = 100;
-      Object.keys(SIZES).forEach(k => { if(Math.abs(SIZES[k].h - diffH) < minD) { minD=Math.abs(SIZES[key].h-diffH); sz=k; } });
+      Object.keys(SIZES).forEach(k => { if(Math.abs(SIZES[k].h - diffH) < minD) { minD=Math.abs(SIZES[k].h-diffH); sz=k; } });
       const isDone = e.summary.startsWith(DONE_PREFIX);
       tasks.push({ id: e.id, name: isDone ? e.summary.replace(DONE_PREFIX, '') : e.summary, size: sz, isDone });
+      
+      // ★ 0時台（深夜）以外をカレンダーに表示
       if (start.getHours() >= 1) {
         let dIdx = start.getDay() - 1; if (dIdx === -1) dIdx = 6;
         if (dIdx >= 0 && dIdx <= 4) dayTasks[dIdx].push(e.id);
@@ -159,21 +154,24 @@ async function addTask() {
   if(!name) return;
   showLoading(true);
   const m = getMonday(baseDate);
-  const start = new Date(m); start.setHours(0,0,0,0);
+  const start = new Date(m); start.setHours(0,0,0,0); // ストックは月曜0時
   const end = new Date(start); end.setMinutes(SIZES[size].h * 60);
-  await gapi.client.calendar.events.insert({ calendarId: CALENDAR_ID, resource: { summary: name, start: { dateTime: start.toISOString(), timeZone: 'Asia/Tokyo' }, end: { dateTime: end.toISOString(), timeZone: 'Asia/Tokyo' } } });
-  document.getElementById('new-name').value = '';
-  await fetchEvents();
+  try {
+    await gapi.client.calendar.events.insert({ calendarId: CALENDAR_ID, resource: { summary: name, start: { dateTime: start.toISOString(), timeZone: 'Asia/Tokyo' }, end: { dateTime: end.toISOString(), timeZone: 'Asia/Tokyo' } } });
+    document.getElementById('new-name').value = '';
+    await fetchEvents();
+  } catch (e) { console.error(e); }
+  showLoading(false);
 }
 
 async function handleDrop(toDay) {
   if(!dragState) return;
   showLoading(true);
   const t = tasks.find(x => x.id === dragState.taskId);
-  const monday = getMonday(baseDate);
-  const start = new Date(monday); start.setDate(monday.getDate() + toDay); start.setHours(9, 0, 0, 0);
+  const m = getMonday(baseDate);
+  const start = new Date(m); start.setDate(m.getDate() + toDay); start.setHours(9, 0, 0, 0);
   const end = new Date(start); end.setMinutes(end.getMinutes() + SIZES[t.size].h * 60);
-  await gapi.client.calendar.events.patch({ calendarId: CALENDAR_ID, eventId: t.id, resource: { summary: (t.isDone?DONE_PREFIX:'')+t.name, start: { dateTime: start.toISOString() }, end: { dateTime: end.toISOString() } } });
+  await gapi.client.calendar.events.patch({ calendarId: CALENDAR_ID, eventId: t.id, resource: { summary: (t.isDone?DONE_PREFIX:'')+t.name, start: { dateTime: start.toISOString(), timeZone: 'Asia/Tokyo' }, end: { dateTime: end.toISOString(), timeZone: 'Asia/Tokyo' } } });
   dragState = null; await fetchEvents();
 }
 
@@ -209,7 +207,7 @@ function render() {
   const pool = document.getElementById('task-pool');
   const placedIds = Object.values(dayTasks).flat();
   const unplaced = tasks.filter(t => !placedIds.includes(t.id));
-  pool.innerHTML = unplaced.map(t => `<div class="pool-task" draggable="true" ondragstart="dragState={taskId:'${t.id}'}" style="background:${SIZES[t.size].bg}">${t.name} (${t.size})<button class="del-btn" onclick="deleteTask('${t.id}')">×</button></div>`).join('') || '<span style="color:#bbb; font-size:12px;">ストックなし</span>';
+  pool.innerHTML = unplaced.map(t => `<div class="pool-task" draggable="true" ondragstart="dragState={taskId:'${t.id}'}" style="background:${SIZES[t.size].bg}"><span>${t.name}</span><button class="nav-btn" style="padding:2px 5px" onclick="deleteTask('${t.id}')">×</button></div>`).join('') || '<span style="color:#bbb; font-size:12px;">ストックなし</span>';
 
   [0,1,2,3,4].forEach(d => {
     const col = document.getElementById(`col-${d}`); if(!col) return;
@@ -219,22 +217,19 @@ function render() {
       const s = SIZES[t.size];
       const block = document.createElement('div');
       block.className = `task-block ${t.isDone?'is-done':''}`; block.draggable = true;
-      
-      // ★1h = 40px で再計算。15m = 10px だが、最低20pxを確保して文字を保護。
-      let hPx = Math.max(s.h * 40, 20); 
+      // ★ 1時間 = 50px。15m = 12.5px だが、最低22pxを確保。
+      let hPx = Math.max(s.h * 50, 22); 
       block.style.cssText = `height:${hPx}px; background:${s.bg}; border:1px solid ${s.border}; color:${s.text};`;
-      
-      const cb = document.createElement('input'); cb.type='checkbox'; cb.className='done-check'; cb.checked=t.isDone; cb.onclick=()=>toggleDone(tid);
+      const cb = document.createElement('input'); cb.type='checkbox'; cb.className='done-check'; cb.checked=t.isDone; cb.onclick=(e)=>{ e.stopPropagation(); toggleDone(tid); };
       const inp = document.createElement('input'); inp.className='task-name'; inp.value=t.name; inp.onchange=(e)=>updateTaskName(tid, e.target.value);
-      
       block.appendChild(cb); block.appendChild(inp);
       block.ondragstart = () => dragState = { taskId: tid };
       block.ondblclick = async (e) => {
-          if(e.target.type === 'checkbox') return;
+          if(e.target.type==='checkbox')return;
           showLoading(true);
           const start = new Date(getMonday(baseDate)); start.setHours(0,0,0,0);
           const end = new Date(start); end.setMinutes(s.h * 60);
-          await gapi.client.calendar.events.patch({ calendarId: CALENDAR_ID, eventId: tid, resource: { start: { dateTime: start.toISOString() }, end: { dateTime: end.toISOString() } } });
+          await gapi.client.calendar.events.patch({ calendarId: CALENDAR_ID, eventId: tid, resource: { start: { dateTime: start.toISOString(), timeZone: 'Asia/Tokyo' }, end: { dateTime: end.toISOString(), timeZone: 'Asia/Tokyo' } } });
           await fetchEvents();
       };
       col.appendChild(block);
