@@ -1,0 +1,274 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.planner { padding: 1rem 0; font-family: var(--font-sans); }
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
+.title { font-size: 16px; font-weight: 500; color: var(--color-text-primary); }
+.legend { display: flex; gap: 8px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--color-text-secondary); }
+.legend-dot { width: 9px; height: 9px; border-radius: 2px; }
+.cols { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.day-wrap { display: flex; flex-direction: column; gap: 4px; }
+.day-header { text-align: center; font-size: 13px; font-weight: 500; color: var(--color-text-secondary); padding: 6px 0; background: var(--color-background-secondary); border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-tertiary); }
+.day-col { position: relative; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); overflow: hidden; background: var(--color-background-primary); }
+.day-col.drop-over { border-color: #378ADD; background: #E6F1FB44; }
+.zone-normal { position: relative; }
+.zone-over { position: relative; background: #FFF8F0; }
+.zone-divider { height: 2px; background: repeating-linear-gradient(90deg, #EF9F27 0px, #EF9F27 6px, transparent 6px, transparent 12px); margin: 0 3px; position: relative; }
+.zone-divider::before { content: '8h'; position: absolute; right: 4px; top: -9px; font-size: 9px; font-weight: 500; color: #BA7517; }
+.task-block { border-radius: 5px; cursor: grab; user-select: none; display: flex; flex-direction: column; justify-content: center; padding: 3px 7px; font-size: 11px; font-weight: 500; margin: 2px 3px; transition: opacity 0.15s; }
+.task-block:active { cursor: grabbing; opacity: 0.75; }
+.task-block .task-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.task-block .task-dur { font-size: 9px; opacity: 0.65; font-weight: 400; }
+.load-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 4px; }
+.load-bar-bg { height: 8px; background: var(--color-background-secondary); border-radius: 4px; overflow: visible; border: 0.5px solid var(--color-border-tertiary); position: relative; }
+.load-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s, background 0.3s; position: relative; z-index: 1; }
+.load-bar-marker { position: absolute; top: -3px; bottom: -3px; width: 2px; background: #EF9F27; border-radius: 1px; z-index: 2; left: 66.66%; }
+.load-pct { font-size: 10px; color: var(--color-text-secondary); text-align: center; margin-top: 2px; transition: color 0.3s; }
+.load-pct.warn { color: #854F0B; font-weight: 500; }
+.load-pct.over { color: #A32D2D; font-weight: 500; }
+.sidebar { margin-top: 1rem; background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 12px; border: 0.5px solid var(--color-border-tertiary); }
+.sidebar-title { font-size: 12px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 8px; }
+.task-pool { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; }
+.pool-task { padding: 5px 10px; border-radius: 5px; cursor: grab; font-size: 12px; font-weight: 500; user-select: none; display: flex; align-items: center; gap: 5px; }
+.pool-task:active { cursor: grabbing; opacity: 0.7; }
+.add-row { display: flex; gap: 8px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
+.add-row input, .add-row select { font-size: 12px; padding: 5px 8px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); }
+.add-row input { flex: 1; min-width: 120px; }
+.add-btn { padding: 5px 12px; border-radius: var(--border-radius-md); background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); font-size: 12px; color: var(--color-text-primary); cursor: pointer; white-space: nowrap; }
+.add-btn:hover { background: var(--color-background-secondary); }
+.hint { font-size: 10px; color: var(--color-text-tertiary); margin-top: 6px; }
+</style>
+
+<div class="planner">
+  <h2 class="sr-only">週間タスクプランナー — 6h超で黄、8h超で赤、上限12h</h2>
+  <div class="header">
+    <span class="title"><i class="ti ti-layout-kanban" aria-hidden="true" style="font-size:16px;vertical-align:-2px;margin-right:6px"></i>週タスクプランナー</span>
+    <div class="legend" id="legend"></div>
+  </div>
+  <div class="cols" id="cal-cols"></div>
+  <div class="load-row" id="load-row"></div>
+  <div class="sidebar">
+    <div class="sidebar-title"><i class="ti ti-stack" aria-hidden="true" style="font-size:13px;vertical-align:-1px;margin-right:4px"></i>タスクプール — 列にドラッグして追加、ブロックをダブルクリックで戻す</div>
+    <div class="task-pool" id="task-pool"></div>
+    <div class="add-row">
+      <input id="new-name" placeholder="タスク名" />
+      <select id="new-size">
+        <option value="16h">16h</option>
+        <option value="8h">8h</option>
+        <option value="4h" selected>4h</option>
+        <option value="2h">2h</option>
+        <option value="1h">1h</option>
+        <option value="30m">30m</option>
+        <option value="15m">15m</option>
+      </select>
+      <button class="add-btn" onclick="addTask()"><i class="ti ti-plus" aria-hidden="true"></i> 追加</button>
+    </div>
+    <div class="hint">〜6h 緑 ／ 6h超 黄 ／ 8h超 赤 ／ 上限 12h。点線より下はバッファゾーン。ダブルクリックでプールに戻します。</div>
+  </div>
+</div>
+
+<script>
+const DAYS = ['月','火','水','木','金'];
+const WARN_H = 6;
+const STD_H = 8;
+const MAX_H = 12;
+const UNIT = 18;
+
+const SIZES = [
+  { key:'16h', h:16,   label:'16h', color:{ bg:'#FBEAF0', border:'#D4537E', text:'#72243E' }},
+  { key:'8h',  h:8,    label:'8h',  color:{ bg:'#FAEEDA', border:'#BA7517', text:'#633806' }},
+  { key:'4h',  h:4,    label:'4h',  color:{ bg:'#E6F1FB', border:'#378ADD', text:'#0C447C' }},
+  { key:'2h',  h:2,    label:'2h',  color:{ bg:'#EAF3DE', border:'#639922', text:'#27500A' }},
+  { key:'1h',  h:1,    label:'1h',  color:{ bg:'#E1F5EE', border:'#1D9E75', text:'#085041' }},
+  { key:'30m', h:0.5,  label:'30m', color:{ bg:'#EEEDFE', border:'#7F77DD', text:'#3C3489' }},
+  { key:'15m', h:0.25, label:'15m', color:{ bg:'#F1EFE8', border:'#888780', text:'#444441' }},
+];
+
+function si(key) { return SIZES.find(s => s.key === key); }
+function px(h) { return Math.max(Math.round(h * UNIT * 2), 16); }
+
+let tasks = [
+  { id:'t1', name:'ヒップフィッター：修正・リサ', size:'8h' },
+  { id:'t2', name:'LIXIL水回り：見積もり・スケ', size:'2h' },
+  { id:'t3', name:'クールDSバナー：初校・リサ', size:'2h' },
+  { id:'t4', name:'月初4営：買掛', size:'1h' },
+  { id:'t5', name:'LIXIL水回りアニメ：構成案', size:'4h' },
+  { id:'t6', name:'クールDSバナー：納品', size:'30m' },
+  { id:'t7', name:'LIXIL水回りUGC：台本', size:'4h' },
+];
+
+let dayTasks = {0:[],1:[],2:[],3:[],4:[]};
+let dragState = null;
+
+function dayUsed(d) {
+  return dayTasks[d].reduce((s, id) => {
+    const t = tasks.find(x => x.id === id);
+    return s + (t ? si(t.size).h : 0);
+  }, 0);
+}
+
+function buildLegend() {
+  document.getElementById('legend').innerHTML = SIZES.map(s =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${s.color.border}"></div>${s.label}</div>`
+  ).join('');
+}
+
+function buildCols() {
+  const cal = document.getElementById('cal-cols');
+  const lr = document.getElementById('load-row');
+  cal.innerHTML = ''; lr.innerHTML = '';
+  DAYS.forEach((d, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'day-wrap';
+    const hdr = document.createElement('div');
+    hdr.className = 'day-header';
+    hdr.textContent = d;
+    const col = document.createElement('div');
+    col.className = 'day-col';
+    col.id = 'dc-' + i;
+    col.style.minHeight = (MAX_H * UNIT * 2) + 'px';
+    col.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('drop-over'); });
+    col.addEventListener('dragleave', () => col.classList.remove('drop-over'));
+    col.addEventListener('drop', e => { e.preventDefault(); col.classList.remove('drop-over'); handleDrop(i); });
+    wrap.appendChild(hdr); wrap.appendChild(col);
+    cal.appendChild(wrap);
+
+    const ld = document.createElement('div');
+    ld.className = 'load-day';
+    ld.innerHTML = `
+      <div class="load-bar-bg">
+        <div class="load-bar-fill" id="fill-${i}"></div>
+        <div class="load-bar-marker" title="8h基準線"></div>
+      </div>
+      <div class="load-pct" id="pct-${i}">0h / 12h</div>`;
+    lr.appendChild(ld);
+  });
+}
+
+function renderCols() {
+  DAYS.forEach((_, d) => {
+    const col = document.getElementById('dc-' + d);
+    col.innerHTML = '';
+
+    const zoneNormal = document.createElement('div');
+    zoneNormal.className = 'zone-normal';
+    zoneNormal.style.minHeight = (STD_H * UNIT * 2) + 'px';
+
+    const divider = document.createElement('div');
+    divider.className = 'zone-divider';
+
+    const zoneOver = document.createElement('div');
+    zoneOver.className = 'zone-over';
+    zoneOver.style.minHeight = ((MAX_H - STD_H) * UNIT * 2) + 'px';
+
+    let normalH = 0;
+    dayTasks[d].forEach(id => {
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
+      const info = si(task.size);
+      const bpx = px(Math.min(info.h, MAX_H));
+      const block = document.createElement('div');
+      block.className = 'task-block';
+      block.draggable = true;
+      block.style.cssText = `height:${bpx}px;background:${info.color.bg};border:0.5px solid ${info.color.border};color:${info.color.text};`;
+      block.innerHTML = `<div class="task-name">${task.name}</div><div class="task-dur">${info.label}</div>`;
+      block.addEventListener('dragstart', e => { dragState = { taskId: id, fromDay: d }; e.dataTransfer.effectAllowed = 'move'; });
+      block.addEventListener('dblclick', () => { dayTasks[d] = dayTasks[d].filter(x => x !== id); updateAll(); });
+
+      if (normalH + info.h <= STD_H) {
+        zoneNormal.appendChild(block);
+        normalH += info.h;
+      } else {
+        zoneOver.appendChild(block);
+      }
+    });
+
+    col.appendChild(zoneNormal);
+    col.appendChild(divider);
+    col.appendChild(zoneOver);
+  });
+}
+
+function updateLoadBars() {
+  DAYS.forEach((_, d) => {
+    const used = Math.min(dayUsed(d), MAX_H);
+    const pct = Math.round(used / MAX_H * 100);
+    const fill = document.getElementById('fill-' + d);
+    const pctEl = document.getElementById('pct-' + d);
+    fill.style.width = pct + '%';
+
+    const isOver8 = used > STD_H;
+    const isOver6 = used > WARN_H;
+    fill.style.background = isOver8 ? '#E24B4A' : isOver6 ? '#EF9F27' : '#1D9E75';
+
+    const usedDisp = used % 1 === 0 ? used : used.toFixed(2).replace(/\.?0+$/, '');
+    pctEl.textContent = usedDisp + 'h / 12h';
+    pctEl.className = 'load-pct' + (isOver8 ? ' over' : isOver6 ? ' warn' : '');
+  });
+}
+
+function renderPool() {
+  const pool = document.getElementById('task-pool');
+  const placed = new Set(Object.values(dayTasks).flat());
+  const unplaced = tasks.filter(t => !placed.has(t.id));
+  pool.innerHTML = '';
+  if (!unplaced.length) {
+    pool.innerHTML = '<span style="font-size:12px;color:var(--color-text-tertiary)">すべて配置済み ✓</span>';
+    return;
+  }
+  unplaced.forEach(t => {
+    const info = si(t.size);
+    const el = document.createElement('div');
+    el.className = 'pool-task';
+    el.draggable = true;
+    el.style.cssText = `background:${info.color.bg};border:0.5px solid ${info.color.border};color:${info.color.text};`;
+    el.innerHTML = `<span>${t.name}</span><span style="opacity:.6;font-size:10px">${info.label}</span>`;
+    el.addEventListener('dragstart', e => { dragState = { taskId: t.id, fromPool: true }; e.dataTransfer.effectAllowed = 'move'; });
+    pool.appendChild(el);
+  });
+}
+
+function handleDrop(day) {
+  if (!dragState) return;
+  const task = tasks.find(t => t.id === dragState.taskId);
+  if (!task) return;
+  const info = si(task.size);
+
+  if (dayTasks[day].includes(dragState.taskId)) { dragState = null; return; }
+
+  const prevDay = dragState.fromDay;
+  if (prevDay !== undefined) {
+    dayTasks[prevDay] = dayTasks[prevDay].filter(x => x !== dragState.taskId);
+  }
+
+  const after = dayUsed(day) + info.h;
+  if (after > MAX_H + 0.001) {
+    const remaining = (MAX_H - dayUsed(day)).toFixed(2).replace(/\.?0+$/, '');
+    alert(`上限12hを超えます。あと ${remaining}h 空きがあります。`);
+    if (prevDay !== undefined) dayTasks[prevDay].push(dragState.taskId);
+    dragState = null;
+    return;
+  }
+
+  dayTasks[day].push(dragState.taskId);
+  dragState = null;
+  updateAll();
+}
+
+function addTask() {
+  const name = document.getElementById('new-name').value.trim();
+  const size = document.getElementById('new-size').value;
+  if (!name) return;
+  tasks.push({ id: 't' + Date.now(), name, size });
+  document.getElementById('new-name').value = '';
+  updateAll();
+}
+
+function updateAll() { renderCols(); renderPool(); updateLoadBars(); }
+document.getElementById('new-name').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
+
+buildLegend();
+buildCols();
+updateAll();
+</script>
