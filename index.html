@@ -70,7 +70,6 @@ body { background-color: #fafafa; padding: 15px; font-family: var(--font-sans); 
 .add-btn { width: 100%; padding: 10px; background: #222; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; }
 .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 1000; justify-content: center; align-items: center; font-weight: bold; }
 
-.load-bar-bg { height: 6px; background: #eee; border-radius: 3px; overflow: hidden; }
 .load-bar-fill { height: 100%; width: 0%; transition: width 0.4s; }
 .load-pct { font-size: 10px; text-align: center; margin-top: 4px; color: #888; font-weight: bold; }
 </style>
@@ -146,15 +145,20 @@ async function fetchEvents() {
       tMax = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 1);
     }
 
+    // 1. 専用カレンダー
     const resp = await gapi.client.calendar.events.list({ calendarId: CALENDAR_ID, timeMin: tMin.toISOString(), timeMax: tMax.toISOString(), singleEvents: true });
     tasks = (resp.result.items || []).filter(e => e.start.dateTime).map(e => parseEvent(e, false));
 
+    // 2. メインカレンダー
     const respPrimary = await gapi.client.calendar.events.list({ calendarId: PRIMARY_CAL_ID, timeMin: tMin.toISOString(), timeMax: tMax.toISOString(), singleEvents: true });
     const primaryEvents = (respPrimary.result.items || [])
-      .filter(e => e.start.dateTime) // 【修正】終日予定を除外
+      .filter(e => e.start.dateTime) // 終日除外
+      .filter(e => e.eventType === 'default') // 【追加】「予定」以外（勤務場所、不在、タスク等）を除外
+      .filter(e => e.transparency !== 'transparent') // 【追加】「予定なし（空き時間）」設定のものを除外
       .filter(e => {
+        // 【追加】招待された予定で「はい」と答えたもの、または自分が主催者のもののみ
         const me = e.attendees?.find(a => a.self);
-        return !me || (me.responseStatus === 'accepted' || me.responseStatus === 'needsAction');
+        return !me || me.responseStatus === 'accepted';
       })
       .map(e => parseEvent(e, true));
     
@@ -174,7 +178,6 @@ function parseEvent(e, isExternal) {
 }
 
 function render() {
-  const content = document.getElementById('view-content');
   const label = document.getElementById('date-label');
   if(currentView === 'week') {
     const monday = getMonday(baseDate);
@@ -200,7 +203,7 @@ function renderWeek(monday) {
       <div class="day-col" ondragover="event.preventDefault()" ondrop="handleDrop(event, ${i})">
         ${dayTasks.map(t => {
           const style = SIZE_STYLES[t.size] || SIZE_STYLES['1h'];
-          // 【修正】高さを1時間=50px（15分=12.5px）で一律計算
+          // 高さを1時間=50px（15分=12.5px）で計算。最低22px。
           const blockHeight = Math.max(t.h * 50, 22);
           return `<div class="task-block ${t.isDone?'is-done':''} ${t.isExternal?'external-event':''}" 
                draggable="${!t.isExternal}" ondragstart="dragState='${t.id}'" 
@@ -213,14 +216,15 @@ function renderWeek(monday) {
     </div>`;
     
     const color = used > 8 ? '#e24b4a' : used > 6 ? '#ef9f27' : '#1d9e75';
-    loadHtml += `<div><div class="load-bar-bg"><div class="load-bar-fill" style="width:${used/12*100}%; background:${color}"></div></div><div class="load-pct">${used}h / 12h</div></div>`;
+    loadHtml += `<div><div class="load-bar-bg" style="height:6px; background:#eee; border-radius:3px; overflow:hidden;"><div class="load-bar-fill" style="width:${used/12*100}%; background:${color}"></div></div><div class="load-pct">${used}h / 12h</div></div>`;
   }
   document.getElementById('view-content').innerHTML = html + '</div>' + loadHtml + '</div>';
 }
 
 function renderMonth() {
   const first = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
-  const start = new Date(first); start.setDate(first.getDate() - (first.getDay() === 0 ? 6 : first.getDay() - 1));
+  const startDay = first.getDay() === 0 ? 6 : first.getDay() - 1;
+  const start = new Date(first); start.setDate(first.getDate() - startDay);
   let html = '<div class="month-grid">';
   for(let i=0; i<35; i++) {
     const d = new Date(start); d.setDate(start.getDate() + i);
@@ -247,6 +251,7 @@ async function handleDrop(e, dayIdx) {
   const start = new Date(monday); start.setDate(monday.getDate() + dayIdx); start.setHours(9,0,0,0);
   showLoading(true);
   await gapi.client.calendar.events.patch({ calendarId: CALENDAR_ID, eventId: t.id, resource: { start: { dateTime: start.toISOString(), timeZone: 'Asia/Tokyo' }, end: { dateTime: new Date(start.getTime()+t.h*3600000).toISOString(), timeZone: 'Asia/Tokyo' } } });
+  dragState = null;
   await fetchEvents();
 }
 
