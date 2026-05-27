@@ -123,7 +123,7 @@ body { background-color: #fafafa; padding: 15px; font-family: var(--font-sans); 
 const CLIENT_ID = '372218570250-clb1ol13sjcn259r2ih0j2k7r20koiji.apps.googleusercontent.com';
 const CALENDAR_ID = 'c_a64ea04dfd2c489c485423621ddb6a89de2a609d3e2e2c089248ef9f6311244b@group.calendar.google.com';
 const PRIMARY_CAL_ID = 'primary';
-const STOCK_DATE = '1970-01-01T00:00:00Z'; // 【修正】ストック用タスクの固定日付
+const STOCK_DATE = '1970-01-01T00:00:00Z'; 
 
 const SIZES = {'8h':8, '4h':4, '2h':2, '1h':1, '30m':0.5, '15m':0.25};
 const SIZE_STYLES = {
@@ -163,15 +163,16 @@ async function fetchEvents() {
     const respStock = await gapi.client.calendar.events.list({ calendarId: CALENDAR_ID, timeMin: stockMin.toISOString(), timeMax: stockMax.toISOString(), singleEvents: true });
     let stockTasks = (respStock.result.items || []).filter(e => e.start.dateTime).map(e => parseEvent(e, false));
 
-    // 3. メインカレンダー
+    // 3. メインカレンダー（フィルタ条件適用）
     const respPrimary = await gapi.client.calendar.events.list({ calendarId: PRIMARY_CAL_ID, timeMin: tMin.toISOString(), timeMax: tMax.toISOString(), singleEvents: true });
     const primaryEvents = (respPrimary.result.items || [])
-      .filter(e => e.start.dateTime)
-      .filter(e => e.eventType === 'default') 
-      .filter(e => e.transparency !== 'transparent') 
+      .filter(e => e.start.dateTime) // 終日予定を除外
+      .filter(e => e.eventType === 'default') // カテゴリが「予定」以外を除外
+      .filter(e => e.transparency !== 'transparent') // 「予定なし（空き時間）」設定のものを除外
       .filter(e => {
+        // 招待に対し「はい（accepted）」と答えたもの、または自身が主催者で未回答のもののみ表示
         const me = e.attendees?.find(a => a.self);
-        return !me || me.responseStatus === 'accepted' || me.responseStatus === 'needsAction';
+        return !me || me.responseStatus === 'accepted';
       })
       .map(e => parseEvent(e, true));
     
@@ -208,7 +209,6 @@ function renderWeek(monday) {
   let loadHtml = '<div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-top:15px;">';
   for(let i=0; i<5; i++) {
     const d = new Date(monday); d.setDate(monday.getDate() + i);
-    // ストック以外を表示
     const dayTasks = tasks.filter(t => t.start.toDateString() === d.toDateString() && t.start.getFullYear() > 2000);
     let used = dayTasks.reduce((sum, t) => sum + t.h, 0);
     
@@ -253,7 +253,6 @@ function renderMonth() {
 }
 
 function renderPool() {
-  // 1970年に設定されているものをストックとして表示
   const pool = tasks.filter(t => t.start.getFullYear() <= 1970 && !t.isExternal);
   document.getElementById('task-pool').innerHTML = pool.map(t => `<div class="pool-task" draggable="true" ondragstart="dragState='${t.id}'" style="background:${SIZE_STYLES[t.size].bg}"><span>${t.name}</span><button style="border:none; background:transparent; cursor:pointer;" onclick="deleteTask('${t.id}')">×</button></div>`).join('') || 'なし';
 }
@@ -273,7 +272,6 @@ async function addTask() {
   const name = document.getElementById('new-name').value;
   const size = document.getElementById('new-size').value;
   if(!name) return;
-  // 【修正】常に固定の過去日付（ストック領域）に追加
   const start = new Date(STOCK_DATE);
   showLoading(true);
   await gapi.client.calendar.events.insert({ calendarId: CALENDAR_ID, resource: { summary: name, start: { dateTime: start.toISOString(), timeZone: 'Asia/Tokyo' }, end: { dateTime: new Date(start.getTime()+SIZES[size]*3600000).toISOString(), timeZone: 'Asia/Tokyo' } } });
