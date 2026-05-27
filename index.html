@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <style>
-/* スタイルはこれまでの「隙間なし・月表示版」を継承 */
+/* 共通スタイル */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root { --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 body { background-color: #fafafa; padding: 20px; font-family: var(--font-sans); }
@@ -13,34 +13,44 @@ body { background-color: #fafafa; padding: 20px; font-family: var(--font-sans); 
 .nav-area { display: flex; align-items: center; gap: 8px; background: #f0f0f0; padding: 4px; border-radius: 8px; }
 .nav-btn { padding: 6px 12px; cursor: pointer; border: none; background: #fff; border-radius: 6px; font-size: 13px; font-weight: bold; }
 .current-month-label { font-size: 15px; font-weight: bold; color: #333; padding: 0 15px; min-width: 120px; text-align: center; }
+
+/* カレンダーグリッド */
 .cols { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 8px; }
 .day-wrap { display: flex; flex-direction: column; gap: 8px; }
 .day-header { text-align: center; font-size: 11px; padding: 10px 0; background: #f8f9fa; border-radius: 6px; border: 1px solid #eee; }
 .day-header b { display: block; font-size: 16px; color: #333; margin-top: 2px; }
 .day-col { position: relative; border: 1px solid #e0e0e0; border-radius: 8px; background: #fff; min-height: 480px; padding: 4px; background-image: linear-gradient(to bottom, transparent 288px, #EF9F27 288px, #EF9F27 290px, #fffcf8 290px); }
 .day-col.drop-over { border-color: #378ADD; background-color: #f0f7ff; }
-.task-block { border-radius: 6px; cursor: grab; user-select: none; display: flex; align-items: center; padding: 0 8px; font-size: 11px; font-weight: bold; margin-bottom: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
-.task-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+
+/* タスクブロック */
+.task-block { border-radius: 6px; cursor: grab; user-select: none; display: flex; align-items: center; padding: 0 8px; font-size: 11px; font-weight: bold; margin-bottom: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); overflow: hidden; position: relative; }
+.task-block:active { cursor: grabbing; transform: scale(0.98); }
+.task-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; border: none; background: transparent; font-family: inherit; font-size: inherit; font-weight: inherit; color: inherit; outline: none; cursor: pointer; }
+.task-name:focus { background: rgba(255,255,255,0.5); cursor: text; }
+
+/* 負荷バー */
 .load-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 25px; }
 .load-bar-bg { height: 6px; background: #eee; border-radius: 3px; overflow: hidden; }
 .load-bar-fill { height: 100%; width: 0%; transition: width 0.4s; }
 .load-pct { font-size: 10px; text-align: center; margin-top: 5px; color: #888; font-weight: bold; }
+
+/* ストック */
 .sidebar { background: #fbfbfb; border-radius: 10px; padding: 20px; border: 1px solid #ececec; }
 .task-pool { display: flex; flex-wrap: wrap; gap: 8px; min-height: 60px; margin-bottom: 15px; padding: 12px; border: 2px dashed #ddd; background: #fff; border-radius: 8px; }
 .pool-task { padding: 8px 14px; border-radius: 20px; cursor: grab; font-size: 12px; font-weight: bold; border: 1px solid #eee; background: #fff; display: flex; align-items: center; gap: 8px; }
-.del-btn { cursor: pointer; border: none; background: #ddd; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; color: #fff; }
+.del-btn { cursor: pointer; border: none; background: #ddd; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; color: #fff; line-height: 16px; }
 .add-row { display: flex; gap: 10px; }
 .add-row input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
-.auth-area { text-align: right; margin-bottom: 10px; }
-.auth-btn { padding: 8px 16px; border-radius: 6px; border: none; background: #4285f4; color: white; cursor: pointer; font-weight: bold; }
+.auth-btn { padding: 8px 16px; border-radius: 6px; border: none; background: #4285f4; color: white; cursor: pointer; font-weight: bold; margin-bottom: 10px; }
 </style>
 </head>
 <body>
 
 <div class="planner">
-  <div class="auth-area" id="auth-area">
-    <button class="auth-btn" onclick="handleAuthClick()">Googleでログイン</button>
+  <div id="auth-section">
+    <button class="auth-btn" onclick="handleAuthClick()">Googleでログインして同期開始</button>
   </div>
+  
   <div class="header">
     <div class="title">タスク管理</div>
     <div class="nav-area">
@@ -69,7 +79,7 @@ body { background-color: #fafafa; padding: 20px; font-family: var(--font-sans); 
 <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 
 <script>
-/* --- 設定：ここを自分の情報に書き換えてください --- */
+/* --- 設定済み：ご提示いただいた情報を反映しました --- */
 const CLIENT_ID = '372218570250-clb1ol13sjcn259r2ih0j2k7r20koiji.apps.googleusercontent.com';
 const CALENDAR_ID = 'c_a64ea04dfd2c489c485423621ddb6a89de2a609d3e2e2c089248ef9f6311244b@group.calendar.google.com';
 /* ------------------------------------------- */
@@ -92,31 +102,26 @@ let tasks = [];
 let dayTasks = {0:[], 1:[], 2:[], 3:[], 4:[]};
 let dragState = null;
 
-// 初期化
-function gapiLoaded() { gapi.load('client', async () => { await gapi.client.init({ discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"] }); gapiInited = true; checkAuth(); }); }
-function gisLoaded() { tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPES, callback: '' }); gisInited = true; checkAuth(); }
-function checkAuth() { if (gapiInited && gisInited) { /* 準備完了 */ } }
+function gapiLoaded() { gapi.load('client', async () => { await gapi.client.init({ discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"] }); gapiInited = true; }); }
+function gisLoaded() { tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPES, callback: '' }); gisInited = true; }
 
 async function handleAuthClick() {
   tokenClient.callback = async (resp) => {
     if (resp.error !== undefined) throw (resp);
-    document.getElementById('auth-area').style.display = 'none';
+    document.getElementById('auth-section').style.display = 'none';
     await fetchEvents();
   };
-  if (gapi.client.getToken() === null) tokenClient.requestAccessToken({prompt: 'consent'});
-  else tokenClient.requestAccessToken({prompt: ''});
+  tokenClient.requestAccessToken({prompt: 'consent'});
 }
 
-// カレンダーから予定（タスク）を取得
 async function fetchEvents() {
   const monday = getMonday(baseDate);
-  const friday = new Date(monday); friday.setDate(monday.getDate() + 5);
+  const sunday = new Date(monday); sunday.setDate(monday.getDate() + 7);
   
   const response = await gapi.client.calendar.events.list({
     calendarId: CALENDAR_ID,
     timeMin: monday.toISOString(),
-    timeMax: friday.toISOString(),
-    showDeleted: false,
+    timeMax: sunday.toISOString(),
     singleEvents: true,
   });
 
@@ -129,47 +134,83 @@ async function fetchEvents() {
     const end = new Date(event.end.dateTime || event.end.date);
     const diffH = (end - start) / (1000 * 60 * 60);
     
-    // 近いサイズを探す
     let closestSize = '1h';
     let minDiff = 100;
     Object.keys(SIZES).forEach(key => {
       if (Math.abs(SIZES[key].h - diffH) < minDiff) {
-        minDiff = Math.abs(SIZES[key].h - diffH);
-        closestSize = key;
+        minDiff = Math.abs(SIZES[key].h - diffH); closestSize = key;
       }
     });
 
-    const taskId = event.id;
-    tasks.push({ id: taskId, name: event.summary, size: closestSize });
+    tasks.push({ id: event.id, name: event.summary, size: closestSize });
     
-    const dayIndex = start.getDay() - 1;
-    if (dayIndex >= 0 && dayIndex <= 4) dayTasks[dayIndex].push(taskId);
+    if (start.getHours() === 0 && start.getMinutes() === 0) {
+        // プール用
+    } else {
+        const dayIndex = start.getDay() - 1;
+        if (dayIndex >= 0 && dayIndex <= 4) dayTasks[dayIndex].push(event.id);
+    }
   });
   render();
 }
 
-// タスク（予定）を追加
-async function addTaskToCalendar(tid, dayIndex) {
-  const task = tasks.find(t => t.id === tid);
-  const monday = getMonday(baseDate);
-  const date = new Date(monday); date.setDate(monday.getDate() + dayIndex);
-  date.setHours(9, 0, 0); // 朝9時開始にする
+async function addTask() {
+  const name = document.getElementById('new-name').value;
+  const size = document.getElementById('new-size').value;
+  if(!name) return;
 
-  const end = new Date(date);
-  end.setMinutes(end.getMinutes() + SIZES[task.size].h * 60);
+  const monday = getMonday(baseDate);
+  const start = new Date(monday); start.setHours(0,0,0,0);
+  const end = new Date(start); end.setMinutes(SIZES[size].h * 60);
 
   const event = {
-    'summary': task.name,
-    'start': { 'dateTime': date.toISOString() },
-    'end': { 'dateTime': end.toISOString() }
+    'summary': name,
+    'start': { 'dateTime': start.toISOString(), 'timeZone': 'Asia/Tokyo' },
+    'end': { 'dateTime': end.toISOString(), 'timeZone': 'Asia/Tokyo' }
   };
 
-  const resp = await gapi.client.calendar.events.insert({ calendarId: CALENDAR_ID, resource: event });
-  task.id = resp.result.id; // Google側のIDに差し替え
-  render();
+  await gapi.client.calendar.events.insert({ calendarId: CALENDAR_ID, resource: event });
+  document.getElementById('new-name').value = '';
+  await fetchEvents();
 }
 
-// 共通ヘルパーと以前の描画ロジック
+async function handleDrop(toDay) {
+  if(!dragState) return;
+  const task = tasks.find(t => t.id === dragState.taskId);
+  const monday = getMonday(baseDate);
+  const start = new Date(monday); 
+  start.setDate(monday.getDate() + toDay);
+  start.setHours(9, 0, 0); 
+  
+  const end = new Date(start);
+  end.setMinutes(end.getMinutes() + SIZES[task.size].h * 60);
+
+  await gapi.client.calendar.events.patch({
+    calendarId: CALENDAR_ID,
+    eventId: task.id,
+    resource: {
+      'start': { 'dateTime': start.toISOString(), 'timeZone': 'Asia/Tokyo' },
+      'end': { 'dateTime': end.toISOString(), 'timeZone': 'Asia/Tokyo' }
+    }
+  });
+  dragState = null;
+  await fetchEvents();
+}
+
+async function deleteTask(tid) {
+  await gapi.client.calendar.events.delete({ calendarId: CALENDAR_ID, eventId: tid });
+  await fetchEvents();
+}
+
+async function updateTaskName(tid, newName) {
+  await gapi.client.calendar.events.patch({
+    calendarId: CALENDAR_ID,
+    eventId: tid,
+    resource: { 'summary': newName }
+  });
+  await fetchEvents();
+}
+
 function getMonday(d) {
   const date = new Date(d);
   const day = date.getDay();
@@ -180,13 +221,10 @@ function getMonday(d) {
 function buildCalendarFrame() {
   const monday = getMonday(baseDate);
   const friday = new Date(monday); friday.setDate(monday.getDate() + 4);
-  const mMonth = monday.getMonth() + 1; const fMonth = friday.getMonth() + 1;
-  document.getElementById('month-label').textContent = mMonth === fMonth ? `${mMonth}月` : `${mMonth}月 / ${fMonth}月`;
-
+  document.getElementById('month-label').textContent = (monday.getMonth()+1) === (friday.getMonth()+1) ? `${monday.getMonth()+1}月` : `${monday.getMonth()+1}月 / ${friday.getMonth()+1}月`;
   const cal = document.getElementById('cal-cols');
   const lr = document.getElementById('load-row');
   cal.innerHTML = ''; lr.innerHTML = '';
-
   for(let i=0; i<5; i++) {
     const target = new Date(monday); target.setDate(monday.getDate() + i);
     cal.innerHTML += `<div class="day-wrap"><div class="day-header">${target.getMonth()+1}/${target.getDate()}<b>${['月','火','水','木','金'][i]}</b></div><div class="day-col" id="col-${i}" ondragover="event.preventDefault();this.classList.add('drop-over')" ondragleave="this.classList.remove('drop-over')" ondrop="this.classList.remove('drop-over');handleDrop(${i})"></div></div>`;
@@ -197,11 +235,12 @@ function buildCalendarFrame() {
 function render() {
   const pool = document.getElementById('task-pool');
   const placedIds = Object.values(dayTasks).flat();
-  pool.innerHTML = tasks.filter(t => !placedIds.includes(t.id)).map(t => `<div class="pool-task" draggable="true" ondragstart="dragState={taskId:'${t.id}'}" style="background:${SIZES[t.size].bg}">${t.name} (${t.size})<button class="del-btn" onclick="deleteTask('${t.id}')">×</button></div>`).join('') || '空です';
+  const unplaced = tasks.filter(t => !placedIds.includes(t.id));
+  pool.innerHTML = unplaced.map(t => `<div class="pool-task" draggable="true" ondragstart="dragState={taskId:'${t.id}'}" style="background:${SIZES[t.size].bg}">${t.name} (${t.size})<button class="del-btn" onclick="deleteTask('${t.id}')">×</button></div>`).join('') || '<span style="color:#bbb; font-size:12px;">ストックなし</span>';
 
   [0,1,2,3,4].forEach(d => {
     const col = document.getElementById(`col-${d}`); if(!col) return;
-    col.innerHTML = ''; let totalH = 0;
+    col.innerHTML = ''; let used = 0;
     dayTasks[d].forEach(tid => {
       const t = tasks.find(x => x.id === tid); if(!t) return;
       const s = SIZES[t.size];
@@ -209,66 +248,35 @@ function render() {
       block.className = 'task-block'; block.draggable = true;
       let hPx = Math.max(s.h * 18 * 2, (t.size==='15m'?18:t.size==='30m'?24:20));
       block.style.cssText = `height:${hPx}px; background:${s.bg}; border:1px solid ${s.border}; color:${s.text}`;
-      block.innerHTML = `<div class="task-name">${t.name}</div>`;
-      block.ondragstart = () => { dragState = { taskId: tid, fromDay: d }; };
-      block.ondblclick = () => deleteEvent(tid, d);
+      
+      const input = document.createElement('input');
+      input.className = 'task-name';
+      input.value = t.name;
+      input.onchange = (e) => updateTaskName(tid, e.target.value);
+      input.onkeydown = (e) => { if(e.key === 'Enter') e.target.blur(); };
+      
+      block.appendChild(input);
+      block.ondragstart = () => dragState = { taskId: tid, fromDay: d };
+      block.ondblclick = async () => {
+          const monday = getMonday(baseDate);
+          const start = new Date(monday); start.setHours(0,0,0,0);
+          const end = new Date(start); end.setMinutes(SIZES[t.size].h * 60);
+          await gapi.client.calendar.events.patch({ calendarId: CALENDAR_ID, eventId: tid, resource: { 'start': { 'dateTime': start.toISOString() }, 'end': { 'dateTime': end.toISOString() } } });
+          await fetchEvents();
+      };
       col.appendChild(block);
-      totalH += s.h;
+      used += s.h;
     });
     const fill = document.getElementById(`fill-${d}`); const pct = document.getElementById(`pct-${d}`);
-    if(fill) { fill.style.width = (totalH/12*100) + '%'; fill.style.backgroundColor = totalH > 8 ? '#e24b4a' : totalH > 6 ? '#ef9f27' : '#1d9e75'; }
-    if(pct) pct.textContent = `${totalH.toFixed(2).replace(/\.?0+$/, '')}h / 12h`;
+    if(fill) { fill.style.width = (used/12*100) + '%'; fill.style.backgroundColor = used > 8 ? '#e24b4a' : used > 6 ? '#ef9f27' : '#1d9e75'; }
+    if(pct) pct.textContent = `${used.toFixed(2).replace(/\.?0+$/, '')}h / 12h`;
   });
-}
-
-async function handleDrop(toDay) {
-  if(!dragState) return;
-  const tid = dragState.taskId;
-  if(dragState.fromDay !== undefined) {
-    // 日付移動：Google側の時間はとりあえず朝9時固定で更新
-    const task = tasks.find(t => t.id === tid);
-    const monday = getMonday(baseDate);
-    const date = new Date(monday); date.setDate(monday.getDate() + toDay); date.setHours(9, 0, 0);
-    const end = new Date(date); end.setMinutes(end.getMinutes() + SIZES[task.size].h * 60);
-    
-    await gapi.client.calendar.events.patch({
-      calendarId: CALENDAR_ID, eventId: tid,
-      resource: { 'start': { 'dateTime': date.toISOString() }, 'end': { 'dateTime': end.toISOString() } }
-    });
-    dayTasks[dragState.fromDay] = dayTasks[dragState.fromDay].filter(id => id !== tid);
-    dayTasks[toDay].push(tid);
-  } else {
-    // プールからドロップ：Googleに新規追加
-    dayTasks[toDay].push(tid);
-    await addTaskToCalendar(tid, toDay);
-  }
-  dragState = null; render();
-}
-
-async function deleteEvent(tid, dayIndex) {
-  await gapi.client.calendar.events.delete({ calendarId: CALENDAR_ID, eventId: tid });
-  dayTasks[dayIndex] = dayTasks[dayIndex].filter(id => id !== tid);
-  tasks = tasks.filter(t => t.id !== tid);
-  render();
-}
-
-function addTask() {
-  const input = document.getElementById('new-name');
-  if(!input.value) return;
-  const tempId = 'temp-' + Date.now();
-  tasks.push({ id: tempId, name: input.value, size: document.getElementById('new-size').value });
-  input.value = ''; render();
-}
-
-function deleteTask(id) {
-  tasks = tasks.filter(t => t.id !== id);
-  render();
 }
 
 function changeWeek(days) {
   baseDate.setDate(baseDate.getDate() + days);
   buildCalendarFrame();
-  if (gapi.client.getToken()) fetchEvents();
+  if (gapi.client && gapi.client.getToken()) fetchEvents();
   else render();
 }
 
