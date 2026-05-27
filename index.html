@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-/* スタイルはさらに安定性を高めて調整 */
+/* 共通スタイル */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --color-text-primary: #333;
@@ -15,9 +15,7 @@
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 body { background-color: #fafafa; padding: 20px; }
-.planner { font-family: var(--font-sans); max-width: 1100px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #eee; }
-
-/* ヘッダー周り */
+.planner { font-family: var(--font-sans); max-width: 1100px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #eee; }
 .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .title-area { display: flex; align-items: center; gap: 15px; }
 .title { font-size: 22px; font-weight: 800; color: #222; }
@@ -25,39 +23,34 @@ body { background-color: #fafafa; padding: 20px; }
 .nav-btn { padding: 6px 12px; cursor: pointer; border: none; background: #fff; border-radius: 6px; font-size: 13px; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
 .nav-btn:hover { background: #fdfdfd; }
 .current-week-label { font-size: 13px; font-weight: bold; color: #555; padding: 0 10px; min-width: 100px; text-align: center; }
-
-/* カレンダーグリッド */
 .cols { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 8px; }
 .day-wrap { display: flex; flex-direction: column; gap: 8px; }
 .day-header { text-align: center; font-size: 11px; padding: 10px 0; background: #f8f9fa; border-radius: 6px; border: 1px solid #eee; color: #777; }
 .day-header b { display: block; font-size: 16px; color: #333; margin-top: 2px; }
-
 .day-col { position: relative; border: 1px solid #e0e0e0; border-radius: 8px; background: #fff; min-height: 480px; transition: background 0.2s; }
 .day-col.drop-over { border-color: #378ADD; background: #f0f7ff; }
-
-/* 8hの境界線 */
 .zone-normal { position: relative; min-height: 288px; border-bottom: 2px dashed #EF9F27; }
 .zone-over { position: relative; background: #fffcf8; min-height: 192px; border-radius: 0 0 8px 8px; }
 
-/* タスクブロック */
-.task-block { border-radius: 6px; cursor: grab; user-select: none; display: flex; flex-direction: column; justify-content: center; padding: 6px 10px; font-size: 11px; font-weight: bold; margin: 3px 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); transition: transform 0.1s; }
+/* ★タスクブロックの高さ調整★ */
+.task-block { border-radius: 6px; cursor: grab; user-select: none; display: flex; align-items: center; padding: 0 8px; font-size: 11px; font-weight: bold; margin: 3px 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); transition: transform 0.1s; overflow: visible; }
 .task-block:active { cursor: grabbing; transform: scale(0.98); }
-.task-block .task-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+.task-block .task-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; width: 100%; }
 
-/* 負荷インジケーター */
+/* サイズ別微調整 */
+.task-mini-30m .task-name { font-size: 10px; }
+.task-mini-15m .task-name { font-size: 9px; letter-spacing: -0.02em; }
+
 .load-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 25px; }
 .load-bar-bg { height: 6px; background: #eee; border-radius: 3px; overflow: hidden; margin-top: 5px; }
 .load-bar-fill { height: 100%; width: 0%; transition: width 0.4s ease-out; }
 .load-pct { font-size: 10px; text-align: center; margin-top: 5px; color: #888; font-weight: bold; }
-
-/* サイドバー（ストック） */
 .sidebar { background: #fbfbfb; border-radius: 10px; padding: 20px; border: 1px solid #ececec; }
 .sidebar-title { font-size: 12px; font-weight: 800; margin-bottom: 12px; color: #666; letter-spacing: 0.05em; }
 .task-pool { display: flex; flex-wrap: wrap; gap: 8px; min-height: 60px; margin-bottom: 15px; padding: 12px; border: 2px dashed #ddd; background: #fff; border-radius: 8px; align-items: center; }
 .pool-task { padding: 8px 14px; border-radius: 20px; cursor: grab; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 8px; border: 1px solid #eee; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
 .del-btn { cursor: pointer; border: none; background: #ddd; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; color: #fff; line-height: 16px; }
 .del-btn:hover { background: #ff4d4d; }
-
 .add-row { display: flex; gap: 10px; align-items: center; }
 .add-row input { flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
 .add-row select { padding: 9px; border: 1px solid #ddd; border-radius: 6px; }
@@ -69,19 +62,15 @@ body { background-color: #fafafa; padding: 20px; }
 
 <div class="planner">
   <div class="header">
-    <div class="title-area">
-      <div class="title">タスク管理</div>
-    </div>
+    <div class="title-area"><div class="title">タスク管理</div></div>
     <div class="nav-area">
       <button class="nav-btn" onclick="changeWeek(-7)">← 前週</button>
       <div id="week-label" class="current-week-label">----</div>
       <button class="nav-btn" onclick="changeWeek(7)">次週 →</button>
     </div>
   </div>
-
   <div class="cols" id="cal-cols"></div>
   <div class="load-row" id="load-row"></div>
-
   <div class="sidebar">
     <div class="sidebar-title">タスクプール（全週共通ストック）</div>
     <div id="task-pool" class="task-pool"></div>
@@ -92,6 +81,8 @@ body { background-color: #fafafa; padding: 20px; }
         <option value="4h" selected>4h</option>
         <option value="2h">2h</option>
         <option value="1h">1h</option>
+        <option value="30m">30m</option>
+        <option value="15m">15m</option>
       </select>
       <button class="add-btn" onclick="addTask()">+ 追加</button>
     </div>
@@ -99,27 +90,40 @@ body { background-color: #fafafa; padding: 20px; }
 </div>
 
 <script>
-// 設定値
+const SIZES = {
+  '8h':  { h:8,    bg:'#FAEEDA', border:'#BA7517', text:'#633806' },
+  '4h':  { h:4,    bg:'#E6F1FB', border:'#378ADD', text:'#0C447C' },
+  '2h':  { h:2,    bg:'#EAF3DE', border:'#639922', text:'#27500A' },
+  '1h':  { h:1,    bg:'#E1F5EE', border:'#1D9E75', text:'#085041' },
+  '30m': { h:0.5,  bg:'#EEEDFE', border:'#7F77DD', text:'#3C3489' },
+  '15m': { h:0.25, bg:'#F1EFE8', border:'#888780', text:'#444441' }
+};
+
 const DAYS_LBL = ['月','火','水','木','金'];
 const UNIT = 18;
 const MAX_H = 12;
-const SIZES = {
-  '8h': { h:8, bg:'#FAEEDA', border:'#BA7517', text:'#633806' },
-  '4h': { h:4, bg:'#E6F1FB', border:'#378ADD', text:'#0C447C' },
-  '2h': { h:2, bg:'#EAF3DE', border:'#639922', text:'#27500A' },
-  '1h': { h:1, bg:'#E1F5EE', border:'#1D9E75', text:'#085041' }
-};
 
-// 状態管理
 let baseDate = new Date();
-let tasks = [
-  { id: 't-init-1', name: 'サンプルタスク (8h)', size: '8h' },
-  { id: 't-init-2', name: '会議資料作成', size: '2h' }
-]; 
+let tasks = []; 
 let weekData = {}; 
 let dragState = null;
 
-// 週ID取得 (例: 2026-W22)
+function saveToLocal() {
+  const data = { tasks, weekData };
+  localStorage.setItem('taskPlannerData', JSON.stringify(data));
+}
+
+function loadFromLocal() {
+  const saved = localStorage.getItem('taskPlannerData');
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    tasks = parsed.tasks || [];
+    weekData = parsed.weekData || {};
+  } else {
+    tasks = [{ id: 't-init-1', name: 'サンプル (15m)', size: '15m' }];
+  }
+}
+
 function getWeekID(date) {
   const d = new Date(date);
   d.setDate(d.getDate() - (d.getDay() === 0 ? 6 : d.getDay() - 1));
@@ -129,51 +133,29 @@ function getWeekID(date) {
   return `${year}-W${week}`;
 }
 
-// カレンダーの骨組みを作成
 function buildCalendarFrame() {
   const weekID = getWeekID(baseDate);
   document.getElementById('week-label').textContent = weekID;
-  
   if(!weekData[weekID]) weekData[weekID] = { 0:[], 1:[], 2:[], 3:[], 4:[] };
-
   const d = new Date(baseDate);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  const monday = new Date(d.setDate(diff));
-
+  const diff = d.getDate() - (d.getDay() === 0 ? 6 : d.getDay() - 1);
+  const monday = new Date(new Date(baseDate).setDate(diff));
   const cal = document.getElementById('cal-cols');
   const lr = document.getElementById('load-row');
   cal.innerHTML = ''; lr.innerHTML = '';
-
   for(let i=0; i<5; i++) {
     const target = new Date(monday);
     target.setDate(monday.getDate() + i);
     const dateStr = (target.getMonth()+1)+'/'+target.getDate();
-
-    cal.innerHTML += `
-      <div class="day-wrap">
-        <div class="day-header">${dateStr}<b>${DAYS_LBL[i]}</b></div>
-        <div class="day-col" id="col-${i}" ondragover="event.preventDefault();this.classList.add('drop-over')" ondragleave="this.classList.remove('drop-over')" ondrop="this.classList.remove('drop-over');handleDrop(${i})">
-          <div class="zone-normal" id="zn-${i}"></div>
-          <div class="zone-over" id="zo-${i}"></div>
-        </div>
-      </div>`;
-
-    lr.innerHTML += `
-      <div>
-        <div class="load-bar-bg"><div class="load-bar-fill" id="fill-${i}"></div></div>
-        <div class="load-pct" id="pct-${i}">0h / 12h</div>
-      </div>`;
+    cal.innerHTML += `<div class="day-wrap"><div class="day-header">${dateStr}<b>${DAYS_LBL[i]}</b></div><div class="day-col" id="col-${i}" ondragover="event.preventDefault();this.classList.add('drop-over')" ondragleave="this.classList.remove('drop-over')" ondrop="this.classList.remove('drop-over');handleDrop(${i})"><div class="zone-normal" id="zn-${i}"></div><div class="zone-over" id="zo-${i}"></div></div></div>`;
+    lr.innerHTML += `<div><div class="load-bar-bg"><div class="load-bar-fill" id="fill-${i}"></div></div><div class="load-pct" id="pct-${i}">0h / 12h</div></div>`;
   }
 }
 
-// データの描画
 function render() {
   const weekID = getWeekID(baseDate);
   const currentWeek = weekData[weekID];
   const allPlacedIds = Object.values(weekData).flatMap(w => Object.values(w).flat());
-  
-  // プールの描画
   const pool = document.getElementById('task-pool');
   const unplaced = tasks.filter(t => !allPlacedIds.includes(t.id));
   pool.innerHTML = unplaced.map(t => {
@@ -181,39 +163,45 @@ function render() {
     return `<div class="pool-task" draggable="true" ondragstart="dragState={taskId:'${t.id}', fromPool:true}" style="background:${s.bg}; border:1px solid #ddd; color:${s.text}">${t.name} (${t.size})<button class="del-btn" onclick="deleteTask('${t.id}')">×</button></div>`;
   }).join('') || '<span style="color:#bbb; font-size:12px;">ストックは空です</span>';
 
-  // カレンダー内タスクの描画
   [0,1,2,3,4].forEach(d => {
     const zn = document.getElementById('zn-'+d);
     const zo = document.getElementById('zo-'+d);
     if(!zn || !zo) return;
     zn.innerHTML = ''; zo.innerHTML = '';
     let currentH = 0;
-
     currentWeek[d].forEach(tid => {
       const t = tasks.find(x => x.id === tid);
-      if(!t) return;
+      if(!t || !SIZES[t.size]) return;
       const s = SIZES[t.size];
       const block = document.createElement('div');
-      block.className = 'task-block';
-      block.draggable = true;
-      block.style.cssText = `height:${s.h * UNIT * 2}px; background:${s.bg}; border:1px solid ${s.border}; color:${s.text}`;
-      block.innerHTML = `<div class="task-name">${t.name}</div>`;
-      block.ondragstart = () => { dragState = { taskId: tid, fromDay: d, fromWeek: weekID }; };
-      block.ondblclick = () => { currentWeek[d] = currentWeek[d].filter(x => x !== tid); render(); };
       
+      // クラス付与
+      if (t.size === '15m') block.className = 'task-block task-mini-15m';
+      else if (t.size === '30m') block.className = 'task-block task-mini-30m';
+      else block.className = 'task-block';
+
+      block.draggable = true;
+      
+      // 高さの階段設定 (15m:18px, 30m:24px, 1h以上:UNIT計算)
+      let hPx = s.h * UNIT * 2;
+      if (t.size === '15m') hPx = 18;
+      else if (t.size === '30m') hPx = 24;
+
+      block.style.cssText = `height:${hPx}px; background:${s.bg}; border:1px solid ${s.border}; color:${s.text}`;
+      block.innerHTML = `<div class="task-name" title="${t.name}">${t.name}</div>`;
+      block.ondragstart = () => { dragState = { taskId: tid, fromDay: d, fromWeek: weekID }; };
+      block.ondblclick = () => { currentWeek[d] = currentWeek[d].filter(x => x !== tid); saveToLocal(); render(); };
       if(currentH + s.h <= 8) zn.appendChild(block); else zo.appendChild(block);
       currentH += s.h;
     });
-
-    // 負荷バー更新
-    const used = currentWeek[d].reduce((sum, tid) => sum + SIZES[tasks.find(t => t.id === tid).size].h, 0);
+    const used = currentWeek[d].reduce((sum, tid) => sum + (tasks.find(x => x.id === tid) ? SIZES[tasks.find(x => x.id === tid).size].h : 0), 0);
     const fill = document.getElementById('fill-'+d);
-    const pct = document.getElementById('pct-'+d);
     if(fill) {
       fill.style.width = (used/MAX_H*100) + '%';
       fill.style.backgroundColor = used > 8 ? '#e24b4a' : used > 6 ? '#ef9f27' : '#1d9e75';
     }
-    if(pct) pct.textContent = `${used}h / 12h`;
+    const pct = document.getElementById('pct-'+d);
+    if(pct) pct.textContent = `${Number.isInteger(used) ? used : used.toFixed(2)}h / 12h`;
   });
 }
 
@@ -221,25 +209,14 @@ function handleDrop(toDay) {
   if(!dragState) return;
   const weekID = getWeekID(baseDate);
   const task = tasks.find(t => t.id === dragState.taskId);
+  if(!task) return;
   const sizeH = SIZES[task.size].h;
-
-  // 同じ日のドロップは無視
-  if(dragState.fromDay === toDay && dragState.fromWeek === weekID) return;
-
-  // 容量チェック
   const currentH = weekData[weekID][toDay].reduce((sum, tid) => sum + SIZES[tasks.find(x => x.id === tid).size].h, 0);
-  if(currentH + sizeH > MAX_H) {
-    alert("上限12時間を超えます");
-    return;
-  }
-
-  // 元の場所から消す
-  if(dragState.fromDay !== undefined) {
-    weekData[dragState.fromWeek][dragState.fromDay] = weekData[dragState.fromWeek][dragState.fromDay].filter(id => id !== dragState.taskId);
-  }
-  
+  if(currentH + sizeH > MAX_H) { alert("上限12時間を超えます"); return; }
+  if(dragState.fromDay !== undefined) weekData[dragState.fromWeek][dragState.fromDay] = weekData[dragState.fromWeek][dragState.fromDay].filter(id => id !== dragState.taskId);
   weekData[weekID][toDay].push(dragState.taskId);
   dragState = null;
+  saveToLocal();
   render();
 }
 
@@ -256,6 +233,7 @@ function addTask() {
   if(!name) return;
   tasks.push({ id: 't'+Date.now(), name, size });
   input.value = '';
+  saveToLocal();
   render();
 }
 
@@ -264,11 +242,12 @@ function deleteTask(id) {
   Object.keys(weekData).forEach(w => {
     [0,1,2,3,4].forEach(d => weekData[w][d] = weekData[w][d].filter(tid => tid !== id));
   });
+  saveToLocal();
   render();
 }
 
-// 起動！
 window.onload = () => {
+  loadFromLocal();
   buildCalendarFrame();
   render();
 };
